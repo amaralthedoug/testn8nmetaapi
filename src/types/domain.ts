@@ -1,3 +1,7 @@
+// Applies to leads.n8n_delivery_status only.
+// Do NOT confuse with ProcessingStatus, which applies to webhook_events.processing_status.
+export type N8nDeliveryStatus = 'pending' | 'success' | 'failed' | 'retrying';
+
 export type ProcessingStatus =
   | 'received'
   | 'validated'
