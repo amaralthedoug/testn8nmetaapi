@@ -43,8 +43,9 @@ tests/
 ```
 
 **Modified files:**
-- `src/config/env.ts` — add `ADMIN_API_KEY` (z.string().min(32)); add test-env default (`'test-admin-api-key-32-chars-min!!'`) — 33 chars, passes validation
+- `src/config/env.ts` — add `ADMIN_API_KEY` (z.string().min(32)); test-env default: `'test-admin-api-key-32-chars-min!!'` (33 chars)
 - `src/types/domain.ts` — add `N8nDeliveryStatus` type (distinct from `ProcessingStatus`)
+- `src/app/createApp.ts` — register admin routes
 
 ---
 
@@ -163,13 +164,6 @@ CREATE INDEX IF NOT EXISTS idx_leads_failed
 ```
 
 Partial index covers only failed rows — stays small as successful leads accumulate. The `listFailed` query orders by `updated_at ASC` (oldest-failed-first, consistent with retry worker).
-
-### `leadRepository` addition
-
-```typescript
-leadRepository.setStatus(leadId: string, status: 'retrying' | 'failed' | 'success')
-// → UPDATE leads SET n8n_delivery_status=$2, updated_at=now() WHERE id=$1
-```
 
 Note: `n8n_delivery_status` is a plain `TEXT` column (no DB constraint). Its valid values are enforced only at the application layer. This is **distinct** from `ProcessingStatus` in `domain.ts`, which applies to `webhook_events.processing_status` (the ingestion pipeline). A new type will be added to `domain.ts` with a comment to prevent future conflation:
 
