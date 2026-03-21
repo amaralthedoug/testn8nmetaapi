@@ -97,11 +97,14 @@ See `docs/n8n-workflow.md` for node-by-node workflow and production webhook guid
 - n8n production webhook is active and reachable from backend.
 - HTTPS termination handled by deployment ingress/proxy.
 
-## Remaining TODOs / risks
-- Add OpenAPI docs and Prometheus metrics endpoint.
-- Add dead-letter replay API with RBAC.
-- Add multi-tenant page/client routing and per-form field mapping.
-- Add integration test container stack (app + postgres + mocked n8n).
+## Roadmap
+
+| Status | Feature |
+| --- | --- |
+| ✅ Done | OpenAPI docs (`GET /docs`) and Prometheus metrics (`GET /metrics`) |
+| ✅ Done | Dead-letter replay API with RBAC |
+| ✅ Done | Multi-tenant routing + per-form field mapping (`config/routing.json`, form→page→default cascade) |
+| 🔜 Planned | Integration test container stack (app + postgres + mocked n8n) |
 
 ## AI agent delivery log
 - Registramos cada entrega de um agente de IA (Codex, Claude, GPT-5.x, etc.) em `docs/ai-agent-roadmap.md`. Abra o arquivo para ver qual foi o último item implementado e o que ficou pendente.
