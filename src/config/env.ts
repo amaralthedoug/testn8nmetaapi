@@ -3,12 +3,21 @@ import { z } from 'zod';
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'test') {
+  process.env.DATABASE_URL ??= 'postgres://postgres:postgres@localhost:5432/test';
+  process.env.META_VERIFY_TOKEN ??= 'test-verify-token';
+  process.env.META_APP_SECRET ??= 'test-app-secret';
+  process.env.N8N_WEBHOOK_URL ??= 'https://example.com/webhook';
+  process.env.N8N_INTERNAL_AUTH_TOKEN ??= 'test-n8n-token';
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1),
   META_VERIFY_TOKEN: z.string().min(1),
+  META_APP_SECRET: z.string().min(1),
   N8N_WEBHOOK_URL: z.string().url(),
   N8N_INTERNAL_AUTH_TOKEN: z.string().min(1),
   RETRY_MAX_ATTEMPTS: z.coerce.number().default(5),

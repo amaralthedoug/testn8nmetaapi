@@ -42,6 +42,7 @@ docs/
 Copy `.env.example` to `.env` and update values.
 - `DATABASE_URL`
 - `META_VERIFY_TOKEN`
+- `META_APP_SECRET`
 - `N8N_WEBHOOK_URL`
 - `N8N_INTERNAL_AUTH_TOKEN`
 - retry and rate limit knobs
@@ -82,6 +83,7 @@ docker compose exec app npm run db:migrate
 
 ## Security notes
 - Meta challenge token verification included.
+- `X-Hub-Signature-256` HMAC validation using the Meta app secret.
 - Payload shape validated with Zod.
 - Secrets from env only.
 - Structured JSON logs via pino; secret redaction enabled.
@@ -96,7 +98,6 @@ See `docs/n8n-workflow.md` for node-by-node workflow and production webhook guid
 - HTTPS termination handled by deployment ingress/proxy.
 
 ## Remaining TODOs / risks
-- Add Meta signature validation (`X-Hub-Signature-256`) using app secret.
 - Add OpenAPI docs and Prometheus metrics endpoint.
 - Add dead-letter replay API with RBAC.
 - Add multi-tenant page/client routing and per-form field mapping.
