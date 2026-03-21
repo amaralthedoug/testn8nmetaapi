@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
-import { ZodTypeProvider, jsonSchemaTransform } from 'fastify-type-provider-zod';
+import { ZodTypeProvider, jsonSchemaTransform, validatorCompiler, serializerCompiler } from 'fastify-type-provider-zod';
 import fastifyRawBody from 'fastify-raw-body';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
@@ -16,6 +16,9 @@ interface CreateAppOptions {
 
 export const createApp = async (options: CreateAppOptions = { enableDocs: false }) => {
   const app = Fastify({ logger }).withTypeProvider<ZodTypeProvider>();
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   app.register(fastifyRawBody, {
     field: 'rawBody',

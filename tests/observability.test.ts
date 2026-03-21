@@ -43,4 +43,13 @@ describe('observability endpoints', () => {
     expect(res.headers['content-type']).toMatch(/text\/plain/);
     expect(res.body).toContain('http_request_duration_seconds');
   });
+
+  it('GET /docs/json includes /health and /ready routes', async () => {
+    const app = await createApp({ enableDocs: true });
+    await app.ready();
+    const res = await app.inject({ method: 'GET', url: '/docs/json' });
+    const body = JSON.parse(res.body);
+    expect(body.paths).toHaveProperty('/health');
+    expect(body.paths).toHaveProperty('/ready');
+  });
 });
