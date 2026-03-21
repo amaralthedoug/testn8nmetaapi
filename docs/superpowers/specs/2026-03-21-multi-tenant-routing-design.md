@@ -31,6 +31,8 @@ The feature closes both gaps: route by form/page identity, and promote custom fi
 | Routing granularity | form_id → page_id → default → env fallback | Specificity cascade; form is most semantically meaningful; page fallback prevents silent drops on new forms |
 | Field mapping scope | Custom fields only (`rawCustomFields`) | Standard fields are already normalized; value transformation is n8n's responsibility |
 | Implementation style | Pure functions + Zod validation | Follows existing project patterns; pure functions are trivially testable without mocks |
+| Target URL persistence | Store in `leads.n8n_target_url` | Retry worker must replay to the same URL used during first attempt — not the global default |
+| Service wiring | `app.decorate('leadIngestionService', ...)` | Controller uses a module-level singleton — Fastify decoration is the idiomatic way to inject a configured instance without restructuring the controller |
 
 ---
 
@@ -68,7 +70,7 @@ The feature closes both gaps: route by form/page identity, and promote custom fi
 - `pages[].forms[].url` overrides the page URL for that specific form.
 - `fieldMap` is optional at any level. A form entry without `fieldMap` only changes the delivery URL.
 - `fieldMap` keys are the exact labels the advertiser wrote in the Meta form (case-sensitive).
-- `fieldMap` values are restricted to promotable fields of `NormalizedLead`: `phone`, `email`, `fullName`, `firstName`, `lastName`, `city`, `state`, `productInterest`, `budgetRange`, `purchaseTimeline`.
+- `fieldMap` values are restricted to the promotable subset of `NormalizedLead` (see below).
 
 **Routing cascade:**
 ```
@@ -80,23 +82,46 @@ no match, no default       → use N8N_WEBHOOK_URL from env
 
 ---
 
+## Promotable Fields
+
+`fieldMap` target values are restricted to this set (excludes Meta envelope fields like `pageId`, `formId`, `externalLeadId` which come from the webhook itself, not from custom form answers):
+
+```
+phone | email | fullName | firstName | lastName
+city  | state | productInterest | budgetRange | purchaseTimeline
+campaignName | adsetName | adName
+```
+
+`campaignName`, `adsetName`, and `adName` are included because the normalizer does not currently populate them from the webhook envelope — they would only be available if set as custom questions.
+
+---
+
 ## New Files
+
+### `config/routing.example.json`
+
+Committed reference template. `config/routing.json` is gitignored in local dev (contains real URLs).
 
 ### `src/config/routingConfig.ts`
 
-Loads and validates `config/routing.json` at startup using Zod. Returns a validated `RoutingConfig` object or throws with a descriptive error. If the file does not exist, returns `null` (routing disabled — env fallback used).
+Loads and validates `config/routing.json` at startup using Zod via `fs.promises.readFile` (async — does not block the event loop). Returns a validated `RoutingConfig` object or:
+- `null` if the file does not exist (routing disabled — env fallback used, no startup error)
+- throws if the file exists but fails Zod validation (startup failure — fail fast before accepting requests)
+
+The thrown error must propagate through the `createApp` promise chain and must not be caught and swallowed.
 
 ### `src/routing/resolveRoute.ts`
 
 ```typescript
 type PromotableField =
   | 'phone' | 'email' | 'fullName' | 'firstName' | 'lastName'
-  | 'city' | 'state' | 'productInterest' | 'budgetRange' | 'purchaseTimeline';
+  | 'city' | 'state' | 'productInterest' | 'budgetRange' | 'purchaseTimeline'
+  | 'campaignName' | 'adsetName' | 'adName';
 
 type RouteMatch = {
   url: string;
   fieldMap: Record<string, PromotableField>;
-  source: 'form' | 'page' | 'default' | 'env-fallback';
+  source: 'form' | 'page' | 'default' | 'env';  // for structured logging only — not in payload
 };
 
 resolveRoute(
@@ -107,7 +132,7 @@ resolveRoute(
 ): RouteMatch
 ```
 
-Pure function. No I/O, no side effects. `source` is used for structured logging only.
+Pure function. No I/O, no side effects.
 
 ### `src/routing/applyFieldMap.ts`
 
@@ -118,14 +143,25 @@ applyFieldMap(
 ): NormalizedLead
 ```
 
-Pure function. Returns a new `NormalizedLead` object (immutable — does not mutate the input). For each `fieldMap` entry:
-1. If `lead.rawCustomFields[sourceKey]` exists and is a string, promote to `lead[targetField]`.
-2. Remove the promoted key from `rawCustomFields`.
-3. Do **not** overwrite a field already set by the Meta standard payload — Meta data takes priority.
+Pure function. Returns a **new** `NormalizedLead` object (does not mutate the input). For each `fieldMap` entry:
+1. If `lead.rawCustomFields[sourceKey]` exists **and is a string**, promote its value to `lead[targetField]`.
+2. Remove the promoted key from `rawCustomFields` in the returned object (prevents duplication in stored `normalized_payload`).
+3. If the value is not a string (number, array, object), skip silently — no error, no promotion.
+4. Do **not** overwrite a field already set by the Meta standard payload. "Already set" means `lead[targetField] !== undefined`. If Meta sent a value that normalizes to `undefined` (e.g. empty phone), the custom field promotion will fill it in — this is correct behavior.
+
+> **Note on file location:** `src/routing/` is a deliberate choice over `src/utils/`. These functions are domain-specific to the routing feature and will grow alongside it. A dedicated directory keeps them cohesive.
 
 ---
 
 ## Modified Files
+
+### `db/migrations/003_add_n8n_target_url.sql`
+
+```sql
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS n8n_target_url TEXT;
+```
+
+Required so the retry worker can replay to the correct per-form URL, not the global `N8N_WEBHOOK_URL`.
 
 ### `src/integrations/n8n/client.ts`
 
@@ -137,6 +173,8 @@ postToN8n(payload: N8nLeadPayload): Promise<N8nResponse>
 postToN8n(payload: N8nLeadPayload, url: string): Promise<N8nResponse>
 ```
 
+`N8N_INTERNAL_AUTH_TOKEN` header is always sent regardless of which URL is targeted.
+
 ### `src/services/n8nDeliveryService.ts`
 
 ```typescript
@@ -147,20 +185,110 @@ deliver(leadId: string, payload: N8nLeadPayload): Promise<void>
 deliver(leadId: string, payload: N8nLeadPayload, url: string): Promise<void>
 ```
 
+`url` is threaded through to `postToN8n(payload, url)`.
+
 ### `src/services/leadIngestionService.ts`
 
-`routingConfig` loaded once at startup and injected via constructor. In the lead processing loop, two steps are inserted between normalization and persistence:
+New constructor signature (default parameters keep existing tests working):
 
 ```typescript
-const route = resolveRoute(lead.formId, lead.pageId, routingConfig, env.N8N_WEBHOOK_URL);
+constructor(
+  private readonly deliveryService = new N8nDeliveryService(),
+  private readonly routingConfig: RoutingConfig | null = null
+) {}
+```
+
+Processing order in the lead loop (order is critical):
+
+```typescript
+// 1. Resolve route
+const route = resolveRoute(lead.formId, lead.pageId, this.routingConfig, env.N8N_WEBHOOK_URL);
+
+// 2. Apply field map — BEFORE hash and persistence
 const mappedLead = applyFieldMap(lead, route.fieldMap);
-// mappedLead used from here on (persistence + delivery)
-deliver(leadId, n8nPayload, route.url);
+
+// 3. Compute hash on mapped lead (promotion may affect phone/email used for dedup)
+const leadHash = buildLeadHash(mappedLead);
+
+// 4. Persist mapped lead + target URL
+const leadId = await leadRepository.create(mappedLead, leadHash, route.url);
+
+// 5. Build n8n payload using mapped lead
+const n8nPayload: N8nLeadPayload = {
+  correlationId,
+  ingestedAt: new Date().toISOString(),
+  lead: mappedLead,   // ← mapped lead, not original
+  meta: { isDuplicate: false, rawEventStored: true, version: '1.0.0' }
+};
+
+// 6. Log routing source
+logger.info({ correlationId, formId: lead.formId, routeSource: route.source }, 'lead routed');
+
+// 7. Deliver to resolved URL
+setImmediate(async () => {
+  await this.deliveryService.deliver(leadId, n8nPayload, route.url);
+});
+```
+
+### `src/repositories/leadRepository.ts`
+
+`create()` receives `n8nTargetUrl: string` as an additional parameter and persists it to `leads.n8n_target_url`.
+
+### `src/repositories/retryRepository.ts`
+
+`listFailedLeads()` must include `n8n_target_url` in the SELECT:
+
+```sql
+SELECT id, normalized_payload, n8n_target_url
+FROM leads
+WHERE n8n_delivery_status = 'failed'
+ORDER BY updated_at ASC
+LIMIT $1
+```
+
+### `src/workers/retryWorker.ts`
+
+Reads `n8n_target_url` from the leads row. Falls back to `env.N8N_WEBHOOK_URL` if null (leads created before this migration):
+
+```typescript
+const targetUrl = row.n8n_target_url ?? env.N8N_WEBHOOK_URL;
+await service.deliver(row.id, payload, targetUrl);
 ```
 
 ### `src/app/createApp.ts`
 
-Loads routing config once and injects into `LeadIngestionService`.
+Loads routing config once (async) and decorates the app with a configured `LeadIngestionService` instance. The controller reads `request.server.leadIngestionService` instead of its module-level singleton:
+
+```typescript
+const routingConfig = await loadRoutingConfig();
+const leadIngestionService = new LeadIngestionService(new N8nDeliveryService(), routingConfig);
+app.decorate('leadIngestionService', leadIngestionService);
+```
+
+TypeScript declaration for the decorator must be added to keep type safety:
+
+```typescript
+declare module 'fastify' {
+  interface FastifyInstance {
+    leadIngestionService: LeadIngestionService;
+  }
+}
+```
+
+### `src/controllers/metaWebhookController.ts`
+
+Replace module-level singleton with the decorated instance:
+
+```typescript
+// Before
+const leadIngestionService = new LeadIngestionService();
+
+// After — read from Fastify instance (injected in createApp)
+export const receiveMetaWebhook = async (request: FastifyRequest, reply: FastifyReply) => {
+  const result = await request.server.leadIngestionService.ingest({ ... });
+  // rest unchanged
+};
+```
 
 ---
 
@@ -174,11 +302,17 @@ POST /webhooks/meta/lead-ads
     ├── webhookEventRepository.create()
     │
     └── For each normalized lead:
-          ├── resolveRoute(formId, pageId, config)  → { url, fieldMap, source }
-          ├── applyFieldMap(lead, fieldMap)          → mappedLead
-          ├── Deduplication (uses mappedLead)
-          ├── leadRepository.create(mappedLead)
+          ├── resolveRoute(formId, pageId, config, envUrl)       → { url, fieldMap, source }
+          ├── applyFieldMap(lead, fieldMap)                      → mappedLead
+          ├── buildLeadHash(mappedLead)                          → hash (on mapped lead)
+          ├── Deduplication check
+          ├── leadRepository.create(mappedLead, hash, url)       → persists n8n_target_url
+          ├── Build n8nPayload with lead: mappedLead
           └── N8nDeliveryService.deliver(id, payload, url)
+
+Retry worker:
+    ├── retryRepository.listFailedLeads() → includes n8n_target_url
+    └── N8nDeliveryService.deliver(id, payload, row.n8n_target_url ?? env.N8N_WEBHOOK_URL)
 ```
 
 ---
@@ -188,10 +322,11 @@ POST /webhooks/meta/lead-ads
 | Scenario | Behavior |
 |---|---|
 | `routing.json` missing | Silent — routing disabled, env fallback used |
-| `routing.json` invalid (Zod) | Startup failure with descriptive error — fail fast before accepting requests |
-| `formId`/`pageId` not in config | Falls through cascade to default or env fallback — lead always delivered |
-| `fieldMap` key not in `rawCustomFields` | Silently skipped — no error, no data loss |
-| `fieldMap` target already set | Source value discarded — Meta standard field takes priority |
+| `routing.json` invalid (Zod) | Startup failure with descriptive error — fail fast |
+| `formId`/`pageId` not in config | Falls through cascade — lead always delivered |
+| `fieldMap` key not in `rawCustomFields` | Silently skipped |
+| `fieldMap` value is not a string | Silently skipped |
+| `fieldMap` target already set (`!== undefined`) | Source value discarded — Meta data takes priority |
 
 ---
 
@@ -200,19 +335,18 @@ POST /webhooks/meta/lead-ads
 | Scope | Approach |
 |---|---|
 | `resolveRoute` | Pure unit tests — form match, page fallback, default fallback, env fallback, missing ids |
-| `applyFieldMap` | Pure unit tests — promotion, no-overwrite, missing key, rawCustomFields cleanup |
-| `routingConfig` Zod validation | Unit tests — valid JSON passes, invalid JSON throws with message |
-| `LeadIngestionService` | Spy on `deliver()` to assert correct URL and mapped lead fields |
-| Ingestion route (`app.inject()`) | Integration test confirming end-to-end routing with mocked delivery |
+| `applyFieldMap` | Pure unit tests — promotion, no-overwrite (`!== undefined`), non-string skip, rawCustomFields cleanup |
+| `routingConfig` Zod | Unit tests — valid JSON passes, invalid schema throws, missing file returns null |
+| `LeadIngestionService` | Spy on `deliver()` to assert correct URL; assert `leadRepository.create` called with mapped lead |
+| Retry worker | Verify `deliver()` called with `n8n_target_url` from row, not global env URL |
+| Ingestion route (`app.inject()`) | End-to-end test with mocked delivery confirming correct URL used |
 
 ---
 
 ## What Does Not Change
 
 - HMAC signature validation
-- Webhook schema validation
-- Deduplication logic
-- Retry worker
+- Webhook schema validation (Zod)
 - Dead-letter replay API
 - Admin routes
 - All existing tests (API contract unchanged)
@@ -223,13 +357,18 @@ POST /webhooks/meta/lead-ads
 
 | File | Action |
 |---|---|
-| `config/routing.json` | Create (with example values) |
-| `config/routing.example.json` | Create (committed reference, routing.json gitignored in local dev) |
+| `config/routing.example.json` | Create (committed reference) |
+| `config/routing.json` | Create locally (gitignored in dev) |
+| `db/migrations/003_add_n8n_target_url.sql` | Create |
 | `src/config/routingConfig.ts` | Create |
 | `src/routing/resolveRoute.ts` | Create |
 | `src/routing/applyFieldMap.ts` | Create |
 | `src/integrations/n8n/client.ts` | Modify — add `url` param |
-| `src/services/n8nDeliveryService.ts` | Modify — add `url` param |
-| `src/services/leadIngestionService.ts` | Modify — resolve route + apply field map |
-| `src/app/createApp.ts` | Modify — load routing config, inject into service |
+| `src/services/n8nDeliveryService.ts` | Modify — add `url` param, thread to postToN8n |
+| `src/services/leadIngestionService.ts` | Modify — constructor, resolve route, apply map, hash on mapped lead, n8nPayload with mappedLead |
+| `src/repositories/leadRepository.ts` | Modify — persist n8n_target_url |
+| `src/repositories/retryRepository.ts` | Modify — SELECT n8n_target_url |
+| `src/workers/retryWorker.ts` | Modify — read n8n_target_url, pass to deliver |
+| `src/controllers/metaWebhookController.ts` | Modify — use request.server.leadIngestionService |
+| `src/app/createApp.ts` | Modify — load routing config, decorate app with service |
 | `tests/routing.test.ts` | Create |
