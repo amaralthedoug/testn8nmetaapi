@@ -7,8 +7,8 @@ export type N8nResponse = {
   body: string;
 };
 
-export const postToN8n = async (payload: N8nLeadPayload): Promise<N8nResponse> => {
-  const response = await fetch(env.N8N_WEBHOOK_URL, {
+export const postToN8n = async (payload: N8nLeadPayload, url: string): Promise<N8nResponse> => {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',

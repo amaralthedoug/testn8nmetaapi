@@ -29,8 +29,9 @@ describe('N8nDeliveryService', () => {
       ingestedAt: new Date().toISOString(),
       lead: { source: 'facebook_lead_ads' },
       meta: { isDuplicate: false, rawEventStored: true, version: '1.0.0' }
-    });
+    }, 'https://n8n.example.com/webhook');
 
     expect(postSpy).toHaveBeenCalledTimes(2);
+    expect(postSpy).toHaveBeenCalledWith(expect.anything(), 'https://n8n.example.com/webhook');
   });
 });
