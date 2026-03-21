@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import fastifyRawBody from 'fastify-raw-body';
 import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
@@ -8,8 +9,12 @@ import { logger } from '../utils/logger.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
 
-export const createApp = () => {
-  const app = Fastify({ logger });
+interface CreateAppOptions {
+  enableDocs: boolean;
+}
+
+export const createApp = (options: CreateAppOptions = { enableDocs: false }) => {
+  const app = Fastify({ logger }).withTypeProvider<ZodTypeProvider>();
 
   app.register(fastifyRawBody, {
     field: 'rawBody',
