@@ -9,6 +9,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
+import { registerAdminRoutes } from '../routes/admin.js';
 
 interface CreateAppOptions {
   enableDocs: boolean;
@@ -84,6 +85,7 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
 
   app.register(registerHealthRoutes);
   app.register(registerMetaRoutes);
+  app.register(registerAdminRoutes);
 
   return app;
 };
