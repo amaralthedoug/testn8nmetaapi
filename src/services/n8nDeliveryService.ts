@@ -8,12 +8,12 @@ import type { N8nLeadPayload } from '../types/domain.js';
 const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class N8nDeliveryService {
-  async deliver(leadId: string, payload: N8nLeadPayload): Promise<void> {
+  async deliver(leadId: string, payload: N8nLeadPayload, url: string): Promise<void> {
     for (let attempt = 1; attempt <= env.RETRY_MAX_ATTEMPTS; attempt += 1) {
       await leadRepository.incrementAttempts(leadId);
 
       try {
-        const response = await postToN8n(payload);
+        const response = await postToN8n(payload, url);
         await deliveryAttemptRepository.create({
           leadId,
           targetSystem: 'n8n',

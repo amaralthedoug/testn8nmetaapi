@@ -6,15 +6,26 @@ import { buildLeadHash } from '../utils/hash.js';
 import type { N8nLeadPayload } from '../types/domain.js';
 import { N8nDeliveryService } from './n8nDeliveryService.js';
 import { logger } from '../utils/logger.js';
+import { resolveRoute } from '../routing/resolveRoute.js';
+import { applyFieldMap } from '../routing/applyFieldMap.js';
+import { env } from '../config/env.js';
+import type { RoutingConfig } from '../config/routingConfig.js';
 
 export type LeadIngestionResult =
   | { accepted: true }
   | { accepted: false; reason: 'validation_error' };
 
 export class LeadIngestionService {
-  constructor(private readonly deliveryService = new N8nDeliveryService()) {}
+  constructor(
+    private readonly deliveryService = new N8nDeliveryService(),
+    private readonly routingConfig: RoutingConfig | null = null
+  ) {}
 
-  async ingest(input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }): Promise<LeadIngestionResult> {
+  async ingest(input: {
+    correlationId: string;
+    payload: unknown;
+    headers: Record<string, unknown>;
+  }): Promise<LeadIngestionResult> {
     const parsed = metaWebhookSchema.safeParse(input.payload);
     if (!parsed.success) {
       await webhookEventRepository.create({
@@ -39,14 +50,21 @@ export class LeadIngestionService {
     const normalizedLeads = normalizeMetaPayload(payload);
 
     for (const lead of normalizedLeads) {
-      const leadHash = buildLeadHash(lead);
+      // 1. Resolve route
+      const route = resolveRoute(lead.formId, lead.pageId, this.routingConfig, env.N8N_WEBHOOK_URL);
+
+      // 2. Apply field map BEFORE hash and persistence
+      const mappedLead = applyFieldMap(lead, route.fieldMap);
+
+      // 3. Hash computed on mapped lead (promotion may affect phone/email used for dedup)
+      const leadHash = buildLeadHash(mappedLead);
 
       const eventId = await webhookEventRepository.create({
         provider: 'meta',
         eventType: 'leadgen',
-        sourcePageId: lead.pageId,
-        sourceFormId: lead.formId,
-        externalEventId: lead.externalLeadId,
+        sourcePageId: mappedLead.pageId,
+        sourceFormId: mappedLead.formId,
+        externalEventId: mappedLead.externalLeadId,
         rawPayload: input.payload,
         headers: input.headers,
         processingStatus: 'persisted',
@@ -54,27 +72,30 @@ export class LeadIngestionService {
       });
 
       const existing = await leadRepository.findByHash(leadHash);
-
       if (existing) {
         await webhookEventRepository.updateStatus(eventId, 'duplicate');
         logger.info({ correlationId: input.correlationId, leadHash }, 'duplicate lead ignored');
         continue;
       }
 
-      const leadId = await leadRepository.create(lead, leadHash);
+      // 4. Persist mapped lead with resolved URL
+      const leadId = await leadRepository.create(mappedLead, leadHash, route.url);
+
+      logger.info(
+        { correlationId: input.correlationId, formId: lead.formId, routeSource: route.source },
+        'lead routed'
+      );
+
+      // 5. Build n8n payload from mapped lead
       const n8nPayload: N8nLeadPayload = {
         correlationId: input.correlationId,
         ingestedAt: new Date().toISOString(),
-        lead,
-        meta: {
-          isDuplicate: false,
-          rawEventStored: true,
-          version: '1.0.0'
-        }
+        lead: mappedLead,
+        meta: { isDuplicate: false, rawEventStored: true, version: '1.0.0' }
       };
 
       setImmediate(async () => {
-        await this.deliveryService.deliver(leadId, n8nPayload);
+        await this.deliveryService.deliver(leadId, n8nPayload, route.url);
         await webhookEventRepository.updateStatus(eventId, 'forwarded');
       });
     }

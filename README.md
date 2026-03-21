@@ -196,8 +196,8 @@ Metrics are instrumented automatically via `fastify-metrics`. Query parameters a
 | ✅ Done | n8n async delivery with retries and audit log |
 | ✅ Done | HMAC signature validation |
 | ✅ Done | OpenAPI docs (`GET /docs`) + Prometheus metrics (`GET /metrics`) |
-| 📋 Spec ready | Dead-letter replay API with RBAC |
-| 🔜 Planned | Multi-tenant page/client routing + per-form field mapping |
+| ✅ Done | Dead-letter replay API with RBAC |
+| ✅ Done | Multi-tenant routing + per-form field mapping (`config/routing.json`, form→page→default cascade) |
 | 🔜 Planned | Integration test container stack (app + postgres + mocked n8n) |
 
 See `docs/ai-agent-roadmap.md` for the full delivery log and backlog.

@@ -11,13 +11,14 @@ export const startRetryWorker = () => {
     const failedLeads = await retryRepository.listFailedLeads();
     for (const row of failedLeads) {
       const lead = row.normalized_payload as NormalizedLead;
+      const targetUrl = row.n8n_target_url ?? env.N8N_WEBHOOK_URL;
       const payload: N8nLeadPayload = {
         correlationId: `retry-${row.id}`,
         ingestedAt: new Date().toISOString(),
         lead,
         meta: { isDuplicate: false, rawEventStored: true, version: '1.0.0' }
       };
-      await service.deliver(row.id, payload);
+      await service.deliver(row.id, payload, targetUrl);
     }
   }, env.RETRY_POLL_INTERVAL_MS).unref();
 

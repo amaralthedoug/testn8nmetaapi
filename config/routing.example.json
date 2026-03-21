@@ -1,0 +1,23 @@
+{
+  "default": {
+    "url": "https://n8n.example.com/webhook/default"
+  },
+  "pages": [
+    {
+      "pageId": "111111111",
+      "url": "https://n8n.example.com/webhook/page-a",
+      "forms": [
+        {
+          "formId": "222222222",
+          "url": "https://n8n.example.com/webhook/form-b",
+          "fieldMap": {
+            "mobile phone": "phone",
+            "product interest": "productInterest",
+            "budget range": "budgetRange",
+            "purchase timeline": "purchaseTimeline"
+          }
+        }
+      ]
+    }
+  ]
+}
