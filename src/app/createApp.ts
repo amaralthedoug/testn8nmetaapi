@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { ZodTypeProvider, jsonSchemaTransform } from 'fastify-type-provider-zod';
 import fastifyRawBody from 'fastify-raw-body';
 import sensible from '@fastify/sensible';
@@ -57,7 +58,8 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
   app.register(helmet);
 
   // Metrics — always enabled, excludes /metrics and /docs from route histograms
-  const metricsPlugin = (await import('fastify-metrics')).default;
+  const { default: metricsPluginModule } = await import('fastify-metrics');
+  const metricsPlugin = (metricsPluginModule as unknown as { default: FastifyPluginAsync<Record<string, unknown>> }).default ?? metricsPluginModule as unknown as FastifyPluginAsync<Record<string, unknown>>;
   await app.register(metricsPlugin, {
     defaultMetrics: { enabled: true },
     endpoint: { url: '/metrics', schema: { hide: true } },
