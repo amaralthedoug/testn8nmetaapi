@@ -7,10 +7,14 @@ import type { N8nLeadPayload } from '../types/domain.js';
 import { N8nDeliveryService } from './n8nDeliveryService.js';
 import { logger } from '../utils/logger.js';
 
+export type LeadIngestionResult =
+  | { accepted: true }
+  | { accepted: false; reason: 'validation_error' };
+
 export class LeadIngestionService {
   constructor(private readonly deliveryService = new N8nDeliveryService()) {}
 
-  async ingest(input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }) {
+  async ingest(input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }): Promise<LeadIngestionResult> {
     const parsed = metaWebhookSchema.safeParse(input.payload);
     if (!parsed.success) {
       await webhookEventRepository.create({
@@ -22,13 +26,16 @@ export class LeadIngestionService {
         processingError: parsed.error.message,
         correlationId: input.correlationId
       });
-      return { accepted: false, reason: 'validation_error' as const };
+      return { accepted: false, reason: 'validation_error' };
     }
 
     return this.processValidatedPayload(parsed.data, input);
   }
 
-  private async processValidatedPayload(payload: MetaWebhookPayload, input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }) {
+  private async processValidatedPayload(
+    payload: MetaWebhookPayload,
+    input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }
+  ): Promise<LeadIngestionResult> {
     const normalizedLeads = normalizeMetaPayload(payload);
 
     for (const lead of normalizedLeads) {
