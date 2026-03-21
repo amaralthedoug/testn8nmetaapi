@@ -9,6 +9,7 @@ if (process.env.NODE_ENV === 'test') {
   process.env.META_APP_SECRET ??= 'test-app-secret';
   process.env.N8N_WEBHOOK_URL ??= 'https://example.com/webhook';
   process.env.N8N_INTERNAL_AUTH_TOKEN ??= 'test-n8n-token';
+  process.env.ADMIN_API_KEY ??= 'test-admin-key-at-least-32-chars!!';
 }
 
 const envSchema = z.object({
@@ -20,6 +21,7 @@ const envSchema = z.object({
   META_APP_SECRET: z.string().min(1),
   N8N_WEBHOOK_URL: z.string().url(),
   N8N_INTERNAL_AUTH_TOKEN: z.string().min(1),
+  ADMIN_API_KEY: z.string().min(32),
   RETRY_MAX_ATTEMPTS: z.coerce.number().default(5),
   RETRY_BASE_DELAY_MS: z.coerce.number().default(500),
   RETRY_POLL_INTERVAL_MS: z.coerce.number().default(5000),
