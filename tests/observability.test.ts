@@ -52,4 +52,15 @@ describe('observability endpoints', () => {
     expect(body.paths).toHaveProperty('/health');
     expect(body.paths).toHaveProperty('/ready');
   });
+
+  it('GET /docs/json includes /webhooks/meta/lead-ads routes', async () => {
+    const app = await createApp({ enableDocs: true });
+    await app.ready();
+    const res = await app.inject({ method: 'GET', url: '/docs/json' });
+    const body = JSON.parse(res.body);
+    expect(body.paths).toHaveProperty('/webhooks/meta/lead-ads');
+    const route = body.paths['/webhooks/meta/lead-ads'];
+    expect(route).toHaveProperty('get');
+    expect(route).toHaveProperty('post');
+  });
 });
