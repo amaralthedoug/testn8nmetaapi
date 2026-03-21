@@ -61,6 +61,8 @@ Ingestion API  ──── HMAC validation ────► 401 Rejected
 | `GET` | `/docs` | Swagger UI *(dev/staging only)* |
 | `GET` | `/docs/json` | OpenAPI 3.0 spec *(dev/staging only)* |
 | `GET` | `/metrics` | Prometheus scrape endpoint |
+| `GET` | `/admin/leads/failed` | List permanently-failed leads (paginated) — requires `ADMIN_API_KEY` |
+| `POST` | `/admin/leads/:id/replay` | Re-enqueue a failed lead to n8n — requires `ADMIN_API_KEY` |
 
 ---
 
@@ -196,7 +198,7 @@ Metrics are instrumented automatically via `fastify-metrics`. Query parameters a
 | ✅ Done | n8n async delivery with retries and audit log |
 | ✅ Done | HMAC signature validation |
 | ✅ Done | OpenAPI docs (`GET /docs`) + Prometheus metrics (`GET /metrics`) |
-| 📋 Spec ready | Dead-letter replay API with RBAC |
+| ✅ Done | Dead-letter replay API with RBAC (`GET /admin/leads/failed`, `POST /admin/leads/:id/replay`) |
 | 🔜 Planned | Multi-tenant page/client routing + per-form field mapping |
 | 🔜 Planned | Integration test container stack (app + postgres + mocked n8n) |
 

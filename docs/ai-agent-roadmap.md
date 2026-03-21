@@ -23,6 +23,7 @@ This file is the **source of truth for AI-assisted work** on this project. Every
 
 | Date | Agent | Delivered | Reference | Next Steps |
 |---|---|---|---|---|
+| 2026-03-21 | Claude Code | Dead-letter replay API with RBAC. `GET /admin/leads/failed` (paginated) + `POST /admin/leads/:id/replay` (fire-and-forget). `adminAuth` Fastify plugin with `timingSafeEqual`, atomic `claimForReplay` race guard, partial DB index. 10 tests, TS clean. | `docs/superpowers/specs/2026-03-21-dead-letter-replay-rbac-design.md` | Multi-tenant routing + per-form field mapping |
 | 2026-03-21 | Claude Code | Dead-letter replay RBAC spec and implementation plan. CLAUDE.md conventions doc. README rewrite with architecture, env vars, observability, and roadmap sections. `.env.example` updated with `ADMIN_API_KEY` and `META_APP_SECRET`. | `docs/superpowers/specs/2026-03-21-dead-letter-replay-rbac-design.md` · `docs/superpowers/plans/2026-03-21-dead-letter-replay-rbac.md` | Implement dead-letter replay API (plan is ready) |
 | 2026-03-21 | Claude Code | OpenAPI docs (`GET /docs`) and Prometheus metrics (`GET /metrics`). Added `fastify-type-provider-zod`, `@fastify/swagger`, `@fastify/swagger-ui`, `fastify-metrics`. Zod schemas on all routes. Downgraded `fastify-raw-body` and `@fastify/helmet` to Fastify v4-compatible versions. 16 tests, TS clean. | [PR #3](https://github.com/amaralthedoug/testn8nmetaapi/pull/3) · `docs/superpowers/specs/2026-03-21-openapi-prometheus-design.md` | Dead-letter replay API with RBAC |
 | 2026-03-21 | Claude Code | HMAC `X-Hub-Signature-256` validation on `POST /webhooks/meta/lead-ads`. | PR #2 | OpenAPI docs + Prometheus metrics |
@@ -37,8 +38,7 @@ Priority order — work top to bottom.
 
 | Priority | Item | Notes |
 |---|---|---|
-| 🔴 High | Dead-letter replay API with RBAC | Spec + plan ready (`docs/superpowers/plans/2026-03-21-dead-letter-replay-rbac.md`). Implement: migration, repository, service, routes, RBAC middleware, tests. |
-| 🟡 Medium | Multi-tenant routing + per-form field mapping | Route leads to different n8n flows based on `page_id` or `form_id`. |
+| 🔴 High | Multi-tenant routing + per-form field mapping | Route leads to different n8n flows based on `page_id` or `form_id`. |
 | 🟡 Medium | Integration test container stack | Run `app + postgres + mocked n8n` in CI. Prevent mock/prod divergence. |
 | 🟢 Low | Prometheus alerting rules | Define alert thresholds for delivery failure rate and latency. |
 | 🟢 Low | Grafana dashboard | Visualize `http_request_duration_seconds` and delivery attempt metrics. |
