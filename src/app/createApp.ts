@@ -9,6 +9,15 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
+import { loadRoutingConfig } from '../config/routingConfig.js';
+import { LeadIngestionService } from '../services/leadIngestionService.js';
+import { N8nDeliveryService } from '../services/n8nDeliveryService.js';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    leadIngestionService: LeadIngestionService;
+  }
+}
 
 interface CreateAppOptions {
   enableDocs: boolean;
@@ -19,6 +28,9 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  const routingConfig = await loadRoutingConfig();
+  app.decorate('leadIngestionService', new LeadIngestionService(new N8nDeliveryService(), routingConfig));
 
   app.register(fastifyRawBody, {
     field: 'rawBody',

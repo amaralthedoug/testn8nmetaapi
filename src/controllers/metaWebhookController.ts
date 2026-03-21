@@ -2,25 +2,25 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 import { verifyMetaChallenge } from '../integrations/meta/verification.js';
 import { correlationIdFromHeader } from '../utils/correlation.js';
-import { LeadIngestionService } from '../services/leadIngestionService.js';
-
-const leadIngestionService = new LeadIngestionService();
 
 export const verifyWebhookChallenge = async (request: FastifyRequest, reply: FastifyReply) => {
   const query = request.query as Record<string, string | undefined>;
-  const challenge = verifyMetaChallenge(query['hub.mode'], query['hub.verify_token'], query['hub.challenge'], env.META_VERIFY_TOKEN);
-
-  if (!challenge) {
-    return reply.status(403).send({ error: 'verification failed' });
-  }
-
+  const challenge = verifyMetaChallenge(
+    query['hub.mode'],
+    query['hub.verify_token'],
+    query['hub.challenge'],
+    env.META_VERIFY_TOKEN
+  );
+  if (!challenge) return reply.status(403).send({ error: 'verification failed' });
   return reply.status(200).send(challenge);
 };
 
 export const receiveMetaWebhook = async (request: FastifyRequest, reply: FastifyReply) => {
-  const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'] as string | undefined);
+  const correlationId = correlationIdFromHeader(
+    request.headers['x-correlation-id'] as string | undefined
+  );
 
-  const result = await leadIngestionService.ingest({
+  const result = await request.server.leadIngestionService.ingest({
     correlationId,
     payload: request.body,
     headers: request.headers as Record<string, unknown>
