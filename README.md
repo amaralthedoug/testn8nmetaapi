@@ -94,6 +94,7 @@ Copy `.env.example` to `.env` and set:
 | `RETRY_MAX_ATTEMPTS` | Max delivery retry attempts (default: `5`) |
 | `RETRY_BASE_DELAY_MS` | Base delay for exponential backoff (default: `500`) |
 | `RETRY_POLL_INTERVAL_MS` | Retry worker polling interval (default: `5000`) |
+| `ADMIN_API_KEY` | Static bearer token for admin endpoints (dead-letter replay, etc.) |
 | `RATE_LIMIT_MAX` | Max requests per window (default: `100`) |
 | `RATE_LIMIT_WINDOW` | Rate limit window (default: `1 minute`) |
 
@@ -195,7 +196,7 @@ Metrics are instrumented automatically via `fastify-metrics`. Query parameters a
 | ✅ Done | n8n async delivery with retries and audit log |
 | ✅ Done | HMAC signature validation |
 | ✅ Done | OpenAPI docs (`GET /docs`) + Prometheus metrics (`GET /metrics`) |
-| 🔜 Next | Dead-letter replay API with RBAC |
+| 📋 Spec ready | Dead-letter replay API with RBAC |
 | 🔜 Planned | Multi-tenant page/client routing + per-form field mapping |
 | 🔜 Planned | Integration test container stack (app + postgres + mocked n8n) |
 
