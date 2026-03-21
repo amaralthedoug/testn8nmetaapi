@@ -6,16 +6,14 @@ import { correlationIdFromHeader } from '../utils/correlation.js';
 import { env } from '../config/env.js';
 import { verifyMetaSignature } from '../integrations/meta/verification.js';
 
-const ensureMetaSignature = (request: FastifyRequest, reply: FastifyReply) => {
+const ensureMetaSignature = async (request: FastifyRequest, reply: FastifyReply) => {
   const signature = request.headers['x-hub-signature-256'] as string | undefined;
   const rawBody = (request as FastifyRequest & { rawBody?: string }).rawBody;
 
   if (!rawBody || !verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
     const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'] as string | undefined);
-    void reply.status(401).send({ status: 'rejected', reason: 'invalid_signature', correlationId });
+    await reply.status(401).send({ status: 'rejected', reason: 'invalid_signature', correlationId });
   }
-
-  return;
 };
 
 // 400: generic rejection from handler
