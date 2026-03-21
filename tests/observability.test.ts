@@ -32,4 +32,15 @@ describe('observability endpoints', () => {
     const body = JSON.parse(res.body);
     expect(body.paths).not.toHaveProperty('/metrics');
   });
+
+  it('GET /metrics returns Prometheus text with http_request_duration_seconds', async () => {
+    const app = await createApp({ enableDocs: false });
+    await app.ready();
+    // Make a request so at least one metric is recorded
+    await app.inject({ method: 'GET', url: '/health' });
+    const res = await app.inject({ method: 'GET', url: '/metrics' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/plain/);
+    expect(res.body).toContain('http_request_duration_seconds');
+  });
 });

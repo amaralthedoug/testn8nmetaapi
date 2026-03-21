@@ -56,7 +56,23 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
   // to the swaggerUi registration options above.
   app.register(helmet);
 
-  // Task 4: metrics registration goes here
+  // Metrics — always enabled, excludes /metrics and /docs from route histograms
+  const metricsPlugin = (await import('fastify-metrics')).default;
+  await app.register(metricsPlugin, {
+    defaultMetrics: { enabled: true },
+    endpoint: { url: '/metrics', schema: { hide: true } },
+    clearRegisterOnInit: true,
+    routeMetrics: {
+      enabled: true,
+      routeBlacklist: ['/metrics', '/docs', '/docs/json', '/docs/yaml'],
+      overrides: {
+        histogram: {
+          labelNames: ['method', 'route', 'status_code']
+        }
+      }
+    },
+    requestPathTransform: (req: { url: string }) => req.url.split('?')[0]
+  });
 
   app.register(registerHealthRoutes);
   app.register(registerMetaRoutes);
