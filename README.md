@@ -1,107 +1,211 @@
-# Facebook Lead Ads Hybrid Ingestion Service
+# Facebook Lead Ads Ingestion Service
 
-Production-oriented hybrid architecture: **Meta Webhook -> Backend Ingestion API -> PostgreSQL persistence -> n8n orchestrator**.
+Production-grade hybrid backend: **Meta Webhook → Ingestion API → PostgreSQL → n8n orchestrator**
 
-## Why hybrid
-- Backend owns mission-critical ingestion and persistence.
-- n8n receives trusted normalized payload only.
-- Idempotency, retries, auditing, and observability stay under backend control.
+> The backend owns ingestion, deduplication, persistence, and retry logic. n8n only receives a clean, trusted payload.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Endpoints](#endpoints)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Docker](#docker)
+- [Project Structure](#project-structure)
+- [Idempotency](#idempotency)
+- [Failure Handling & Retries](#failure-handling--retries)
+- [Security](#security)
+- [Observability](#observability)
+- [Roadmap](#roadmap)
+- [Assumptions](#assumptions)
+
+---
 
 ## Architecture
-1. Meta sends leadgen webhook.
-2. `POST /webhooks/meta/lead-ads` validates + stores raw event in `webhook_events`.
-3. Payload is normalized into internal lead schema.
-4. Deduplication by provider lead id or deterministic hash.
-5. Lead persisted in `leads`.
-6. Async delivery adapter forwards to n8n with retries and logs every attempt in `delivery_attempts`.
-7. Failed deliveries remain queryable and retry worker replays periodically.
 
-## Project structure
 ```
-src/
-  app/
-  config/
-  routes/
-  controllers/
-  services/
-  integrations/
-    meta/
-    n8n/
-  db/
-  repositories/
-  workers/
-  schemas/
-  utils/
-  types/
-tests/
-db/migrations/
-docs/
+Meta Platform
+    │
+    │  POST /webhooks/meta/lead-ads
+    ▼
+Ingestion API  ──── HMAC validation ────► 401 Rejected
+    │
+    ├── Store raw event (webhook_events)
+    ├── Normalize payload
+    ├── Deduplicate (externalLeadId or SHA-256 hash)
+    ├── Persist lead (leads)
+    │
+    └── Async delivery ──► n8n Webhook
+            │
+            └── Retry worker (exponential backoff)
+                └── delivery_attempts log
 ```
 
-## Environment variables
-Copy `.env.example` to `.env` and update values.
-- `DATABASE_URL`
-- `META_VERIFY_TOKEN`
-- `META_APP_SECRET`
-- `N8N_WEBHOOK_URL`
-- `N8N_INTERNAL_AUTH_TOKEN`
-- retry and rate limit knobs
+**Why hybrid?**
+- Backend owns mission-critical ingestion and persistence.
+- n8n receives a trusted, normalized payload — never raw webhook data.
+- Idempotency, retries, auditing, and observability stay under backend control.
 
-## Local development
+---
+
+## Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Liveness probe |
+| `GET` | `/ready` | Readiness probe (checks DB connection) |
+| `GET` | `/webhooks/meta/lead-ads` | Meta webhook verification challenge |
+| `POST` | `/webhooks/meta/lead-ads` | Lead ingestion |
+| `GET` | `/docs` | Swagger UI *(dev/staging only)* |
+| `GET` | `/docs/json` | OpenAPI 3.0 spec *(dev/staging only)* |
+| `GET` | `/metrics` | Prometheus scrape endpoint |
+
+---
+
+## Quick Start
+
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env   # fill in required values
 npm run db:migrate
 npm run dev
 ```
 
+Then open:
+- API: `http://localhost:3000/health`
+- Swagger UI: `http://localhost:3000/docs`
+- Metrics: `http://localhost:3000/metrics`
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and set:
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `META_VERIFY_TOKEN` | Token used to verify Meta webhook challenge |
+| `META_APP_SECRET` | Meta app secret for `X-Hub-Signature-256` HMAC validation |
+| `N8N_WEBHOOK_URL` | n8n production webhook URL |
+| `N8N_INTERNAL_AUTH_TOKEN` | Bearer token sent to n8n |
+| `RETRY_MAX_ATTEMPTS` | Max delivery retry attempts (default: `5`) |
+| `RETRY_BASE_DELAY_MS` | Base delay for exponential backoff (default: `500`) |
+| `RETRY_POLL_INTERVAL_MS` | Retry worker polling interval (default: `5000`) |
+| `RATE_LIMIT_MAX` | Max requests per window (default: `100`) |
+| `RATE_LIMIT_WINDOW` | Rate limit window (default: `1 minute`) |
+
+---
+
 ## Docker
+
 ```bash
 docker compose up --build
 ```
-Then run migration inside app container:
+
+Run migrations inside the container:
+
 ```bash
 docker compose exec app npm run db:migrate
 ```
 
-## Endpoints
-- `GET /health`
-- `GET /ready`
-- `GET /webhooks/meta/lead-ads` (verification challenge)
-- `POST /webhooks/meta/lead-ads` (lead ingestion)
+---
 
-## Idempotency strategy
-- Primary key: `externalLeadId` when provided.
-- Fallback key: SHA-256 hash of `phone|email|formId|createdTime`.
-- Duplicate events update `webhook_events.processing_status=duplicate` and skip downstream dispatch.
+## Project Structure
 
-## Failure handling
-- Validation failures: event stored with `failed` + error.
-- n8n delivery retries with exponential backoff (`RETRY_MAX_ATTEMPTS`, `RETRY_BASE_DELAY_MS`).
-- Attempts are persisted in `delivery_attempts`.
-- Permanent failures marked in `leads.n8n_delivery_status=failed` and picked up by retry worker.
+```
+src/
+  app/              # Fastify app factory (createApp)
+  config/           # Environment variable validation (Zod)
+  routes/           # Route registration (health, meta webhook)
+  controllers/      # Request handlers
+  services/         # Business logic (ingestion, n8n delivery)
+  integrations/
+    meta/           # Signature verification, payload normalizer
+    n8n/            # n8n HTTP client
+  db/               # PostgreSQL pool
+  repositories/     # Data access layer
+  workers/          # Retry worker
+  schemas/          # Zod schemas (Meta webhook payload)
+  utils/            # Logger, hash, correlation ID
+  types/            # Shared domain types
+tests/              # Vitest unit tests
+db/migrations/      # SQL migrations
+docs/               # Specs, plans, workflow guides
+```
 
-## Security notes
-- Meta challenge token verification included.
-- `X-Hub-Signature-256` HMAC validation using the Meta app secret.
-- Payload shape validated with Zod.
-- Secrets from env only.
-- Structured JSON logs via pino; secret redaction enabled.
-- Rate limiting enabled.
+---
 
-## n8n setup
-See `docs/n8n-workflow.md` for node-by-node workflow and production webhook guidance.
+## Idempotency
+
+Every lead event is deduplicated before persistence:
+
+1. **Primary key** — `externalLeadId` when present in the payload.
+2. **Fallback key** — SHA-256 hash of `phone|email|formId|createdTime`.
+
+Duplicate events update `webhook_events.processing_status = 'duplicate'` and skip downstream dispatch.
+
+---
+
+## Failure Handling & Retries
+
+| Scenario | Behavior |
+|---|---|
+| Invalid signature | `401` — event rejected before storage |
+| Validation failure | Event stored as `failed` with error details |
+| n8n delivery failure | Retried with exponential backoff up to `RETRY_MAX_ATTEMPTS` |
+| Permanent failure | `leads.n8n_delivery_status = 'failed'`; picked up by retry worker |
+
+Every delivery attempt is logged in `delivery_attempts` for full auditability.
+
+See `docs/n8n-workflow.md` for n8n node-by-node setup and production webhook configuration.
+
+---
+
+## Security
+
+- **HMAC validation** — Every POST is verified against `X-Hub-Signature-256` using the Meta app secret. Requests with invalid or missing signatures are rejected with `401` before any processing.
+- **Webhook challenge** — Meta's `hub.verify_token` challenge is validated on `GET /webhooks/meta/lead-ads`.
+- **Schema validation** — All payloads are validated with Zod before processing.
+- **Secrets from env only** — No secrets in code or config files.
+- **Structured logging** — JSON logs via pino with secret redaction enabled.
+- **Rate limiting** — Configurable via `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`.
+- **Helmet** — Security headers on all routes.
+
+---
+
+## Observability
+
+| Endpoint | Description |
+|---|---|
+| `GET /metrics` | Prometheus text format. Includes `http_request_duration_seconds` histogram by method, route, and status code. Available in all environments. |
+| `GET /docs` | Swagger UI with full OpenAPI 3.0 spec. Available in development and staging (`NODE_ENV !== 'production'`). |
+
+Metrics are instrumented automatically via `fastify-metrics`. Query parameters are stripped from route labels to prevent label cardinality explosion.
+
+---
+
+## Roadmap
+
+| Status | Item |
+|---|---|
+| ✅ Done | Facebook Lead Ads webhook ingestion + PostgreSQL persistence |
+| ✅ Done | n8n async delivery with retries and audit log |
+| ✅ Done | HMAC signature validation |
+| ✅ Done | OpenAPI docs (`GET /docs`) + Prometheus metrics (`GET /metrics`) |
+| 🔜 Next | Dead-letter replay API with RBAC |
+| 🔜 Planned | Multi-tenant page/client routing + per-form field mapping |
+| 🔜 Planned | Integration test container stack (app + postgres + mocked n8n) |
+
+See `docs/ai-agent-roadmap.md` for the full delivery log and backlog.
+
+---
 
 ## Assumptions
-- Meta app/page permissions are configured externally.
-- n8n production webhook is active and reachable from backend.
-- HTTPS termination handled by deployment ingress/proxy.
 
-## Remaining TODOs / risks
-- Add OpenAPI docs and Prometheus metrics endpoint.
-- Add dead-letter replay API with RBAC.
-- Add multi-tenant page/client routing and per-form field mapping.
-- Add integration test container stack (app + postgres + mocked n8n).
-
-## AI agent delivery log
-- Registramos cada entrega de um agente de IA (Codex, Claude, GPT-5.x, etc.) em `docs/ai-agent-roadmap.md`. Abra o arquivo para ver qual foi o último item implementado e o que ficou pendente.
+- Meta app and page permissions are configured externally in the Meta Developer Portal.
+- n8n production webhook is active and reachable from the backend.
+- HTTPS termination is handled by the deployment ingress/proxy.
+- PostgreSQL is provisioned and accessible via `DATABASE_URL`.
