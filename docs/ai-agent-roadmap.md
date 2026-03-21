@@ -17,6 +17,7 @@ Garantir que qualquer agente (Codex, Claude Code, GPT-5.4, etc.) saiba rapidamen
 ## Registro de entregas
 | Data | Agente | Entrega | Referência | Próximos passos | Verificado por |
 | --- | --- | --- | --- | --- | --- |
+| 2026-03-21 | Claude Code | Added GET /docs (Swagger UI, dev only) and GET /metrics (Prometheus). Installed @fastify/swagger, @fastify/swagger-ui, fastify-type-provider-zod, fastify-metrics. Added Zod OpenAPI schemas to all routes. | docs/superpowers/specs/2026-03-21-openapi-prometheus-design.md | Next: dead-letter replay API with RBAC | Manual |
 | 2026-03-21 | Codex | Criou este log e explicou o procedimento. | docs/ai-agent-roadmap.md | Manter atualizado após cada solicitação de feature. | Auto |
 
 ## Próximos itens sugeridos
