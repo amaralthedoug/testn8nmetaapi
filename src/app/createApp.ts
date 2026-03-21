@@ -1,15 +1,24 @@
 import Fastify from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+import { ZodTypeProvider, jsonSchemaTransform, validatorCompiler, serializerCompiler } from 'fastify-type-provider-zod';
 import fastifyRawBody from 'fastify-raw-body';
-import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
+import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
 
-export const createApp = () => {
-  const app = Fastify({ logger });
+interface CreateAppOptions {
+  enableDocs: boolean;
+}
+
+export const createApp = async (options: CreateAppOptions = { enableDocs: false }) => {
+  const app = Fastify({ logger }).withTypeProvider<ZodTypeProvider>();
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   app.register(fastifyRawBody, {
     field: 'rawBody',
@@ -20,10 +29,57 @@ export const createApp = () => {
   });
 
   app.register(sensible);
-  app.register(helmet);
   app.register(rateLimit, {
     max: env.RATE_LIMIT_MAX,
     timeWindow: env.RATE_LIMIT_WINDOW
+  });
+
+  if (options.enableDocs) {
+    const swagger = (await import('@fastify/swagger')).default;
+    const swaggerUi = (await import('@fastify/swagger-ui')).default;
+
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: 'Facebook Lead Ads Ingestion API',
+          description: 'Hybrid ingestion service: Meta Webhook → PostgreSQL → n8n',
+          version: '1.0.0'
+        }
+      },
+      transform: jsonSchemaTransform
+    });
+
+    await app.register(swaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: { docExpansion: 'list' }
+    });
+  }
+
+  // NOTE: helmet applies globally to all routes (uses fastify-plugin).
+  // If Swagger UI fails to render in browser due to CSP, pass staticCSP: true
+  // to the swaggerUi registration options above.
+  app.register(helmet);
+
+  // Metrics — always enabled, excludes /metrics and /docs from route histograms
+  // fastify-metrics@11.0.0 uses CommonJS __esModule interop — the ESM default export
+  // wraps the actual plugin as `.default.default`. The nullish coalescing fallback
+  // handles environments where the double-nesting is already resolved.
+  const { default: metricsPluginModule } = await import('fastify-metrics');
+  const metricsPlugin = (metricsPluginModule as unknown as { default: FastifyPluginAsync<Record<string, unknown>> }).default ?? metricsPluginModule as unknown as FastifyPluginAsync<Record<string, unknown>>;
+  await app.register(metricsPlugin, {
+    defaultMetrics: { enabled: true },
+    endpoint: { url: '/metrics', schema: { hide: true } },
+    clearRegisterOnInit: true,
+    routeMetrics: {
+      enabled: true,
+      routeBlacklist: ['/metrics', '/docs', '/docs/json', '/docs/yaml'],
+      overrides: {
+        labels: {
+          getRouteLabel: (req: { routeOptions?: { url?: string }; url: string }) =>
+            req.routeOptions?.url ?? req.url.split('?')[0]
+        }
+      }
+    }
   });
 
   app.register(registerHealthRoutes);
