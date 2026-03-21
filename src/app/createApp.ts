@@ -58,6 +58,9 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
   app.register(helmet);
 
   // Metrics — always enabled, excludes /metrics and /docs from route histograms
+  // fastify-metrics@11.0.0 uses CommonJS __esModule interop — the ESM default export
+  // wraps the actual plugin as `.default.default`. The nullish coalescing fallback
+  // handles environments where the double-nesting is already resolved.
   const { default: metricsPluginModule } = await import('fastify-metrics');
   const metricsPlugin = (metricsPluginModule as unknown as { default: FastifyPluginAsync<Record<string, unknown>> }).default ?? metricsPluginModule as unknown as FastifyPluginAsync<Record<string, unknown>>;
   await app.register(metricsPlugin, {
@@ -68,12 +71,12 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
       enabled: true,
       routeBlacklist: ['/metrics', '/docs', '/docs/json', '/docs/yaml'],
       overrides: {
-        histogram: {
-          labelNames: ['method', 'route', 'status_code']
+        labels: {
+          getRouteLabel: (req: { routeOptions?: { url?: string }; url: string }) =>
+            req.routeOptions?.url ?? req.url.split('?')[0]
         }
       }
-    },
-    requestPathTransform: (req: { url: string }) => req.url.split('?')[0]
+    }
   });
 
   app.register(registerHealthRoutes);
