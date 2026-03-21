@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { ZodTypeProvider, jsonSchemaTransform } from 'fastify-type-provider-zod';
 import fastifyRawBody from 'fastify-raw-body';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
@@ -31,7 +31,6 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
   });
 
   if (options.enableDocs) {
-    const { jsonSchemaTransform } = await import('fastify-type-provider-zod');
     const swagger = (await import('@fastify/swagger')).default;
     const swaggerUi = (await import('@fastify/swagger-ui')).default;
 
@@ -46,14 +45,15 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
       transform: jsonSchemaTransform
     });
 
-    // swagger-ui registered before helmet so its CSP headers for /docs are not overridden
     await app.register(swaggerUi, {
       routePrefix: '/docs',
       uiConfig: { docExpansion: 'list' }
     });
   }
 
-  // helmet registered after swagger-ui (strict CSP applies to all routes except /docs)
+  // NOTE: helmet applies globally to all routes (uses fastify-plugin).
+  // If Swagger UI fails to render in browser due to CSP, pass staticCSP: true
+  // to the swaggerUi registration options above.
   app.register(helmet);
 
   // Task 4: metrics registration goes here
