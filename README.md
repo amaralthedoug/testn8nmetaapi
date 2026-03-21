@@ -102,3 +102,6 @@ See `docs/n8n-workflow.md` for node-by-node workflow and production webhook guid
 - Add dead-letter replay API with RBAC.
 - Add multi-tenant page/client routing and per-form field mapping.
 - Add integration test container stack (app + postgres + mocked n8n).
+
+## AI agent delivery log
+- Registramos cada entrega de um agente de IA (Codex, Claude, GPT-5.x, etc.) em `docs/ai-agent-roadmap.md`. Abra o arquivo para ver qual foi o último item implementado e o que ficou pendente.
