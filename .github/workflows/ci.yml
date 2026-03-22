@@ -38,4 +38,4 @@ jobs:
           N8N_WEBHOOK_URL: http://localhost:9999/webhook
           N8N_INTERNAL_AUTH_TOKEN: test-n8n-token
           ADMIN_API_KEY: test-admin-key
-          BACKEND_API_KEY: test-backend-key
+          BACKEND_API_KEY: test-api-key
