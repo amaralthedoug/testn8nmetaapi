@@ -7,16 +7,16 @@ export const leadRepository = {
     return result.rows[0] ?? null;
   },
 
-  async create(lead: NormalizedLead, leadHash: string, n8nTargetUrl: string | null = null) {
+  async create(lead: NormalizedLead, leadHash: string, n8nTargetUrl: string | null = null, sourceId: string | null = null) {
     const query = `
       INSERT INTO leads (
         external_lead_id,full_name,first_name,last_name,email,phone,city,state,campaign_id,campaign_name,
         adset_id,adset_name,ad_id,ad_name,form_id,page_id,created_time_from_provider,normalized_payload,
-        lead_hash,source,n8n_delivery_status,n8n_target_url,created_at,updated_at
+        lead_hash,source,n8n_delivery_status,n8n_target_url,source_id,created_at,updated_at
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
         $11,$12,$13,$14,$15,$16,$17,$18::jsonb,
-        $19,$20,'pending',$21,now(),now()
+        $19,$20,'pending',$21,$22,now(),now()
       ) RETURNING id
     `;
 
@@ -41,7 +41,8 @@ export const leadRepository = {
       JSON.stringify(lead),
       leadHash,
       lead.source,
-      n8nTargetUrl
+      n8nTargetUrl,
+      sourceId
     ];
 
     const result = await pool.query<{ id: string }>(query, values);
