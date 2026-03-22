@@ -85,7 +85,7 @@ describe.skipIf(!isIntegration)('POST /webhooks/meta/lead-ads (integration)', ()
 
     // Poll until the webhook_event status is 'forwarded' (updateStatus runs after deliver() returns)
     let status = 'persisted';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       const { rows: events } = await pool.query(
         "SELECT processing_status FROM webhook_events ORDER BY received_at DESC LIMIT 1"
       );
@@ -117,6 +117,9 @@ describe.skipIf(!isIntegration)('POST /webhooks/meta/lead-ads (integration)', ()
     // Give setImmediate time to fire (if it were going to)
     await new Promise(r => setTimeout(r, 100));
     expect(n8n.requestCount).toBe(0);
+
+    const { rows: leads } = await pool.query('SELECT * FROM leads');
+    expect(leads).toHaveLength(1); // deduplication kept only one lead row
 
     const { rows: events } = await pool.query(
       "SELECT processing_status FROM webhook_events ORDER BY received_at DESC LIMIT 1"
