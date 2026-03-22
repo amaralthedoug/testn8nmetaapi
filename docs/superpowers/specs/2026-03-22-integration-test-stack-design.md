@@ -58,23 +58,21 @@ tests/
 
 `src/config/env.ts` exports `const env = envSchema.parse(process.env)` at module load time — this value is frozen once the module is first imported. Mutating `process.env` after imports are resolved has no effect on the already-parsed `env` object.
 
-**Correct approach:** use a dynamic `import()` inside `beforeAll`, after setting `process.env.N8N_WEBHOOK_URL`:
+**Correct approach:** use `vi.stubEnv` + `vi.resetModules()` in `beforeAll`. `resetModules()` clears Vitest's module registry, forcing all subsequent `import()` calls to re-evaluate modules from scratch — including `env.ts`. This is robust regardless of what the test file or helpers import statically.
 
 ```ts
 // tests/integration/meta-webhook.integration.test.ts
-import { beforeAll, afterAll, afterEach, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, afterEach, describe, it, expect, vi } from 'vitest';
 import { startFakeN8n } from './helpers/n8nServer.js';
 import { runMigrations, truncateAll, pool } from './helpers/db.js';
 
-// No static import of createApp here — must be dynamic
-
-const n8n = await startFakeN8n(); // starts before env is read
-
 describe('POST /webhooks/meta/lead-ads', () => {
-  let app: Awaited<ReturnType<typeof createApp>>;
+  let app: Awaited<ReturnType<typeof import('../../src/app/createApp.js').createApp>>;
+  const n8n = await startFakeN8n();
 
   beforeAll(async () => {
-    process.env.N8N_WEBHOOK_URL = n8n.getUrl(); // set before createApp import
+    vi.stubEnv('N8N_WEBHOOK_URL', n8n.getUrl());
+    vi.resetModules(); // clears module registry — next import() re-evaluates env.ts
     const { createApp } = await import('../../src/app/createApp.js');
     await runMigrations();
     app = await createApp();
@@ -90,13 +88,12 @@ describe('POST /webhooks/meta/lead-ads', () => {
     await app.close();
     await n8n.close();
     await pool.end();
+    vi.unstubAllEnvs();
   });
 });
 ```
 
-This works because the dynamic `import()` inside `beforeAll` defers the **first evaluation** of `env.ts` (and therefore the `envSchema.parse(process.env)` call) until after `process.env.N8N_WEBHOOK_URL` is set. The frozen `env` object is then created with the fake server URL baked in.
-
-**Important fragility:** `env.N8N_WEBHOOK_URL` is a plain string property on the frozen `env` object — not a getter. If any transitive static import in the test file (including `n8nServer.ts` or `db.ts`) causes `env.ts` to be evaluated before `beforeAll` runs, the `envSchema.parse` will capture the wrong URL and the override will silently fail. The helpers (`db.ts`, `n8nServer.ts`) must not import anything from `src/` that transitively imports `env.ts`.
+`vi.stubEnv` sets `process.env.N8N_WEBHOOK_URL` and tracks the original value for restoration. `vi.resetModules()` then clears the module cache so the next `await import('../../src/app/createApp.js')` re-evaluates `env.ts` — capturing the stubbed URL. `vi.unstubAllEnvs()` in `afterAll` restores the original env. This approach is immune to accidental transitive imports loading `env.ts` early.
 
 ### Skip guard for local development without a DB
 
@@ -112,10 +109,10 @@ CI sets `INTEGRATION=true`. Local runs skip integration tests unless the develop
 ### Test lifecycle (per file)
 
 ```
-module-level  → startFakeN8n() (before any beforeAll)
-beforeAll     → set process.env.N8N_WEBHOOK_URL → dynamic import createApp → runMigrations() → app.ready()
+module-level  → startFakeN8n()
+beforeAll     → vi.stubEnv('N8N_WEBHOOK_URL', n8n.getUrl()) → vi.resetModules() → dynamic import createApp → runMigrations() → app.ready()
 afterEach     → truncateAll() + n8n.reset()
-afterAll      → app.close() + n8n.close() + pool.end()
+afterAll      → app.close() + n8n.close() + pool.end() + vi.unstubAllEnvs()
 ```
 
 No `vi.spyOn` on any repository, pool, or HTTP client.
