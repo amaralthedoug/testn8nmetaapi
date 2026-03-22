@@ -9,6 +9,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
+import { registerUnifiedWebhookRoutes } from '../routes/webhooks/unified.js';
 import { loadRoutingConfig } from '../config/routingConfig.js';
 import { LeadIngestionService } from '../services/leadIngestionService.js';
 import { N8nDeliveryService } from '../services/n8nDeliveryService.js';
@@ -96,6 +97,7 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
 
   app.register(registerHealthRoutes);
   app.register(registerMetaRoutes);
+  app.register(registerUnifiedWebhookRoutes);
 
   return app;
 };
