@@ -1,20 +1,10 @@
 export type ProcessingStatus =
   | 'received'
-  | 'validated'
-  | 'normalized'
   | 'persisted'
   | 'forwarded'
-  | 'retrying'
   | 'failed'
   | 'duplicate';
 
-export type ErrorCategory =
-  | 'validation_error'
-  | 'duplicate_event'
-  | 'persistence_error'
-  | 'delivery_error'
-  | 'configuration_error'
-  | 'unsupported_payload_error';
 
 export type NormalizedLead = {
   externalLeadId?: string;
