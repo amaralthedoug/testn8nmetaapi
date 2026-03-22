@@ -34,6 +34,7 @@ describe.skipIf(!isIntegration)('POST /webhooks/v1/leads (integration)', () => {
     vi.resetModules();
     const { createApp } = await import('../../src/app/createApp.js');
     await runMigrations();
+    await truncateAll();
     app = await createApp();
     await app.ready();
   });

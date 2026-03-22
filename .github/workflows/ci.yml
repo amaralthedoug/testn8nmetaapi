@@ -43,8 +43,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
+      - name: Test (unit)
         run: npm test
+        env:
+          NODE_ENV: test
+          META_VERIFY_TOKEN: test-verify-token
+          META_APP_SECRET: test-app-secret
+          N8N_WEBHOOK_URL: http://localhost:9999/webhook
+          N8N_INTERNAL_AUTH_TOKEN: test-n8n-token
+          ADMIN_API_KEY: test-admin-key
+          BACKEND_API_KEY: test-api-key
+
+      - name: Test (integration)
+        run: npx vitest run --no-file-parallelism tests/integration/
         env:
           NODE_ENV: test
           INTEGRATION: 'true'
@@ -55,3 +66,4 @@ jobs:
           N8N_INTERNAL_AUTH_TOKEN: test-n8n-token
           ADMIN_API_KEY: test-admin-key
           BACKEND_API_KEY: test-api-key
+

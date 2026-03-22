@@ -42,6 +42,7 @@ describe.skipIf(!isIntegration)('POST /webhooks/meta/lead-ads (integration)', ()
     vi.resetModules();
     const { createApp } = await import('../../src/app/createApp.js');
     await runMigrations();
+    await truncateAll();
     app = await createApp();
     await app.ready();
   });
