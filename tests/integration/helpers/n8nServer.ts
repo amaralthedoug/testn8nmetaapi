@@ -68,6 +68,7 @@ export async function startFakeN8n(): Promise<FakeN8nServer> {
 
     reset() {
       queue.length = 0;
+      pending.length = 0;
       requestCount = 0;
     },
 
