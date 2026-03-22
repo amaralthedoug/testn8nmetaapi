@@ -11,4 +11,9 @@ describe('dedupe hash strategy', () => {
     const b = buildLeadHash({ email: 'a@b.com', phone: '1', formId: 'f', createdTime: '2020-01-01T00:00:00Z', source: 'facebook_lead_ads' });
     expect(a).toBe(b);
   });
+
+  it('builds hash for instagram lead using handle as external id', () => {
+    const hash = buildLeadHash({ externalLeadId: '@joao_silva', source: 'instagram' });
+    expect(hash).toBe('external:@joao_silva');
+  });
 });

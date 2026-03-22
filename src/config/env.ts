@@ -9,6 +9,7 @@ if (process.env.NODE_ENV === 'test') {
   process.env.META_APP_SECRET ??= 'test-app-secret';
   process.env.N8N_WEBHOOK_URL ??= 'https://example.com/webhook';
   process.env.N8N_INTERNAL_AUTH_TOKEN ??= 'test-n8n-token';
+  process.env.BACKEND_API_KEY ??= 'test-api-key';
 }
 
 const envSchema = z.object({
@@ -24,7 +25,8 @@ const envSchema = z.object({
   RETRY_BASE_DELAY_MS: z.coerce.number().default(500),
   RETRY_POLL_INTERVAL_MS: z.coerce.number().default(5000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
-  RATE_LIMIT_WINDOW: z.string().default('1 minute')
+  RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  BACKEND_API_KEY: z.string().min(1)
 });
 
 export const env = envSchema.parse(process.env);
