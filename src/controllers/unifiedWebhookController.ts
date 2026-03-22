@@ -36,9 +36,15 @@ export const receiveUnifiedWebhook = async (request: FastifyRequest, reply: Fast
   const source = body?.source as string | undefined;
   const contractVersion = body?.contractVersion as string | undefined;
 
+  const safeHeaders = { ...request.headers };
+  delete (safeHeaders as Record<string, unknown>)['x-hub-signature-256'];
+  delete (safeHeaders as Record<string, unknown>)['x-api-key'];
+  delete (safeHeaders as Record<string, unknown>)['authorization'];
+  delete (safeHeaders as Record<string, unknown>)['x-internal-auth-token'];
+
   let eventId: string;
   try {
-    eventId = await webhookEventRepository.create({ provider: source ?? 'unknown', eventType: 'lead_qualified', rawPayload: body, headers: request.headers, processingStatus: 'received', correlationId });
+    eventId = await webhookEventRepository.create({ provider: source ?? 'unknown', eventType: 'lead_qualified', rawPayload: body, headers: safeHeaders, processingStatus: 'received', correlationId });
   } catch (err) {
     log.error({ err }, 'Failed to persist raw event');
     return reply.status(500).send({ status: 'rejected', reason: 'internal_error', correlationId });
