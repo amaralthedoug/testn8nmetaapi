@@ -37,6 +37,7 @@ describe.skipIf(!isIntegration)('POST /webhooks/meta/lead-ads (integration)', ()
 
   beforeAll(async () => {
     n8n = await startFakeN8n();
+    vi.stubEnv('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/leads');
     vi.stubEnv('N8N_WEBHOOK_URL', n8n.getUrl());
     vi.resetModules();
     const { createApp } = await import('../../src/app/createApp.js');
