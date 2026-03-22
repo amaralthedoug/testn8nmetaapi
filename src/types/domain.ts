@@ -38,7 +38,7 @@ export type NormalizedLead = {
   productInterest?: string;
   createdTime?: string;
   rawCustomFields?: Record<string, unknown>;
-  source: 'facebook_lead_ads';
+  source: 'facebook_lead_ads' | 'instagram';
 };
 
 export type N8nLeadPayload = {
