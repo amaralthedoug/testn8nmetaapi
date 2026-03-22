@@ -672,17 +672,19 @@ psql $DATABASE_URL -c "
 
 In the n8n editor, open the workflow and click **Executions** to see recent runs. Each successful delivery appears as a completed execution with the full payload.
 
-### 4. Replay a failed lead via admin API
+### 4. Check failed deliveries
+
+> **Note:** Admin replay endpoints (`GET /admin/leads/failed`, `POST /admin/leads/:id/replay`) are planned but not yet implemented. To check failed deliveries, query the database directly:
 
 ```bash
-# List failed leads
-curl -H "Authorization: Bearer YOUR_ADMIN_API_KEY" \
-  http://localhost:3000/admin/leads/failed
-
-# Replay a specific lead
-curl -X POST \
-  -H "Authorization: Bearer YOUR_ADMIN_API_KEY" \
-  http://localhost:3000/admin/leads/LEAD_ID/replay
+psql $DATABASE_URL -c "
+  SELECT l.id, l.n8n_delivery_status, l.n8n_target_url, da.success, da.response_status
+  FROM leads l
+  LEFT JOIN delivery_attempts da ON da.lead_id = l.id
+  WHERE l.n8n_delivery_status = 'failed'
+  ORDER BY l.created_at DESC
+  LIMIT 20;
+"
 ```
 
 ---

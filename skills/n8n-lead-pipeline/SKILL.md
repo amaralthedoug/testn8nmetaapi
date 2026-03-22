@@ -360,7 +360,18 @@ Use a **Switch** node after scoring to branch based on `tier` or any `lead.*` fi
 
 ### Error handling
 
-testn8nmetaapi handles retries automatically — if n8n returns a non-2xx response or times out, the backend will retry with exponential backoff up to `RETRY_MAX_ATTEMPTS` (default: 5). Failed leads appear in the dead-letter queue at `GET /admin/leads/failed` and can be replayed with `POST /admin/leads/:id/replay`.
+testn8nmetaapi handles retries automatically — if n8n returns a non-2xx response or times out, the backend will retry with exponential backoff up to `RETRY_MAX_ATTEMPTS` (default: 5).
+
+> **Note:** Admin replay endpoints (`GET /admin/leads/failed`, `POST /admin/leads/:id/replay`) are planned but not yet implemented. To check failed deliveries, query the database directly:
+>
+> ```sql
+> SELECT l.id, l.n8n_delivery_status, l.n8n_target_url, da.success, da.response_status
+> FROM leads l
+> LEFT JOIN delivery_attempts da ON da.lead_id = l.id
+> WHERE l.n8n_delivery_status = 'failed'
+> ORDER BY l.created_at DESC
+> LIMIT 20;
+> ```
 
 Within n8n, add an **Error Trigger** workflow to catch node-level failures (e.g. Google Sheets API down) and alert via Slack.
 
