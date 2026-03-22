@@ -1,6 +1,5 @@
 import * as fs from 'fs/promises';
-import { fileURLToPath } from 'url';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { z } from 'zod';
 
 const promotableFieldSchema = z.enum([
@@ -31,7 +30,7 @@ const routingConfigSchema = z.object({
 export type RoutingConfig = z.infer<typeof routingConfigSchema>;
 export type PromotableField = z.infer<typeof promotableFieldSchema>;
 
-const configPath = join(dirname(fileURLToPath(import.meta.url)), '../../config/routing.json');
+const configPath = join(process.cwd(), 'config', 'routing.json');
 
 export const loadRoutingConfig = async (): Promise<RoutingConfig | null> => {
   try {
