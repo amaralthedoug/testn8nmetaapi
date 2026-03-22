@@ -8,20 +8,28 @@ export type N8nResponse = {
 };
 
 export const postToN8n = async (payload: N8nLeadPayload, url: string): Promise<N8nResponse> => {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-internal-auth-token': env.N8N_INTERNAL_AUTH_TOKEN
-    },
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-  const body = await response.text();
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-internal-auth-token': env.N8N_INTERNAL_AUTH_TOKEN
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
 
-  return {
-    ok: response.ok,
-    status: response.status,
-    body
-  };
+    const body = await response.text();
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      body
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };

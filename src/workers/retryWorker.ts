@@ -8,7 +8,7 @@ export const startRetryWorker = () => {
   const service = new N8nDeliveryService();
 
   setInterval(async () => {
-    const failedLeads = await retryRepository.listFailedLeads();
+    const failedLeads = await retryRepository.listFailedLeads(20, env.RETRY_MAX_ATTEMPTS);
     for (const row of failedLeads) {
       const lead = row.normalized_payload as NormalizedLead;
       const targetUrl = row.n8n_target_url ?? env.N8N_WEBHOOK_URL;
