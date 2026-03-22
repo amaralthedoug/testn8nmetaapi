@@ -14,17 +14,17 @@ export class N8nDeliveryService {
 
       try {
         const response = await postToN8n(payload, url);
-        await deliveryAttemptRepository.create({
-          leadId,
-          targetSystem: 'n8n',
-          attemptNumber: attempt,
-          requestPayload: payload,
-          responseStatus: response.status,
-          responseBody: response.body,
-          success: response.ok
-        });
 
         if (response.ok) {
+          await deliveryAttemptRepository.create({
+            leadId,
+            targetSystem: 'n8n',
+            attemptNumber: attempt,
+            requestPayload: payload,
+            responseStatus: response.status,
+            responseBody: response.body,
+            success: true
+          });
           await leadRepository.markForwardStatus(leadId, 'success');
           return;
         }
