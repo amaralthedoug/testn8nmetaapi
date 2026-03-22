@@ -16,6 +16,7 @@ The backend owns ingestion, deduplication, persistence, and retries. n8n only re
 - [Environment Variables](#environment-variables)
 - [Multi-Tenant Routing](#multi-tenant-routing)
 - [Instagram Integration](#instagram-integration)
+- [n8n Workflow Automation](#n8n-workflow-automation)
 - [Database Migrations](#database-migrations)
 - [Project Structure](#project-structure)
 - [Idempotency](#idempotency)
@@ -216,6 +217,34 @@ To add a new integration, register a mapper under `src/integrations/<source>/map
 
 ---
 
+## n8n Workflow Automation
+
+Instead of configuring n8n manually, use [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) to let an AI agent build and deploy the receiving workflow in minutes.
+
+```
+Manual n8n setup:   30–45 minutes
+AI prompt + n8n-mcp: ~3 minutes
+```
+
+### Quick start
+
+1. Connect [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) to Claude Code (or another AI agent).
+2. Paste a prompt from `skills/n8n-lead-pipeline/examples/prompt-templates.md`.
+3. The agent calls `search_nodes` → `get_node` → `validate_workflow` → `create_workflow` automatically.
+4. Add the returned production webhook URL to `config/routing.json`.
+
+### Included resources
+
+| File | Purpose |
+|---|---|
+| `docs/n8n-mcp-integration.md` | Full integration guide: payload contract, headers, 3 importable workflow templates, routing config examples, testing and troubleshooting |
+| `skills/n8n-lead-pipeline/SKILL.md` | Claude Code skill — step-by-step n8n-mcp workflow for any AI agent, niche templates (clinic, dental, real estate, gym), common patterns and anti-patterns |
+| `skills/n8n-lead-pipeline/examples/prompt-templates.md` | 5 self-contained prompts (basic, WhatsApp, Slack+CRM, scoring, full pipeline) — paste directly into Claude Code |
+
+See `docs/n8n-workflow.md` for the manual node-by-node setup guide.
+
+---
+
 ## Database Migrations
 
 Migrations live in `db/migrations/` and run in filename order:
@@ -379,5 +408,6 @@ Integration tests run sequentially (`--no-file-parallelism`) to avoid concurrent
 | ✅ Done | Multi-tenant routing — per-form/page URL cascade + field mapping |
 | ✅ Done | Instagram SDR integration — unified webhook endpoint + contract v1.0 |
 | ✅ Done | Integration test stack — real DB + fake n8n, 7 integration tests, CI Postgres service |
+| ✅ Done | n8n-mcp integration guide + reusable Claude Code skill for automated workflow generation |
 
 See `docs/ai-agent-roadmap.md` for the full delivery log and backlog.
