@@ -26,13 +26,19 @@ export class LeadIngestionService {
     payload: unknown;
     headers: Record<string, unknown>;
   }): Promise<LeadIngestionResult> {
+    const safeHeaders = { ...input.headers };
+    delete (safeHeaders as Record<string, unknown>)['x-hub-signature-256'];
+    delete (safeHeaders as Record<string, unknown>)['x-api-key'];
+    delete (safeHeaders as Record<string, unknown>)['authorization'];
+    delete (safeHeaders as Record<string, unknown>)['x-internal-auth-token'];
+
     const parsed = metaWebhookSchema.safeParse(input.payload);
     if (!parsed.success) {
       await webhookEventRepository.create({
         provider: 'meta',
         eventType: 'leadgen',
         rawPayload: input.payload,
-        headers: input.headers,
+        headers: safeHeaders,
         processingStatus: 'failed',
         processingError: parsed.error.message,
         correlationId: input.correlationId
@@ -40,12 +46,13 @@ export class LeadIngestionService {
       return { accepted: false, reason: 'validation_error' };
     }
 
-    return this.processValidatedPayload(parsed.data, input);
+    return this.processValidatedPayload(parsed.data, input, safeHeaders);
   }
 
   private async processValidatedPayload(
     payload: MetaWebhookPayload,
-    input: { correlationId: string; payload: unknown; headers: Record<string, unknown> }
+    input: { correlationId: string; payload: unknown; headers: Record<string, unknown> },
+    safeHeaders: Record<string, unknown>
   ): Promise<LeadIngestionResult> {
     const normalizedLeads = normalizeMetaPayload(payload);
 
@@ -66,7 +73,7 @@ export class LeadIngestionService {
         sourceFormId: mappedLead.formId,
         externalEventId: mappedLead.externalLeadId,
         rawPayload: input.payload,
-        headers: input.headers,
+        headers: safeHeaders,
         processingStatus: 'persisted',
         correlationId: input.correlationId
       });
@@ -95,8 +102,12 @@ export class LeadIngestionService {
       };
 
       setImmediate(async () => {
-        await this.deliveryService.deliver(leadId, n8nPayload, route.url);
-        await webhookEventRepository.updateStatus(eventId, 'forwarded');
+        try {
+          await this.deliveryService.deliver(leadId, n8nPayload, route.url);
+          await webhookEventRepository.updateStatus(eventId, 'forwarded');
+        } catch (err) {
+          logger.error({ err, eventId }, 'Async n8n delivery failed');
+        }
       });
     }
 

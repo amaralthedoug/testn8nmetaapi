@@ -12,7 +12,7 @@ const ensureMetaSignature = async (request: FastifyRequest, reply: FastifyReply)
 
   if (!rawBody || !verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
     const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'] as string | undefined);
-    await reply.status(401).send({ status: 'rejected', reason: 'invalid_signature', correlationId });
+    return reply.status(401).send({ status: 'rejected', reason: 'invalid_signature', correlationId });
   }
 };
 
