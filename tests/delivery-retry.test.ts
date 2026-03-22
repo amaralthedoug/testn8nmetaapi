@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { N8nDeliveryService } from '../src/services/n8nDeliveryService.js';
 import { leadRepository } from '../src/repositories/leadRepository.js';
 import { deliveryAttemptRepository } from '../src/repositories/deliveryAttemptRepository.js';
@@ -16,6 +16,10 @@ describe('N8nDeliveryService', () => {
     vi.spyOn(leadRepository, 'incrementAttempts').mockResolvedValue();
     vi.spyOn(leadRepository, 'markForwardStatus').mockResolvedValue();
     vi.spyOn(deliveryAttemptRepository, 'create').mockResolvedValue();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('retries then succeeds', async () => {
