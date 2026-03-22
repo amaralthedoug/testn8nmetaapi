@@ -23,6 +23,7 @@ This file is the **source of truth for AI-assisted work** on this project. Every
 
 | Date | Agent | Delivered | Reference | Next Steps |
 |---|---|---|---|---|
+| 2026-03-22 | Claude Code | Integration test stack: DB helper (`pool`, `runMigrations`, `truncateAll`), fake n8n server (queue-based `waitForRequest`), 3 integration tests for `POST /webhooks/meta/lead-ads`, 4 integration tests for `POST /webhooks/v1/leads`. CI gains `postgres:16` service container and runs integration tests sequentially. | `docs/superpowers/plans/2026-03-22-integration-test-stack.md` · commits `0881e4a`–`400127d` | Prometheus alerting rules |
 | 2026-03-22 | Claude Code | Project hygiene: `vitest.config.ts` scoping test discovery to `tests/` only (prevents worktree duplication). | [PR #12](https://github.com/amaralthedoug/testn8nmetaapi/pull/12) | Integration test container stack |
 | 2026-03-22 | Claude Code | Docker fixes: `env_file` changed from `.env.example` to `.env`; Postgres healthcheck (`pg_isready`) added; `depends_on` uses `condition: service_healthy`; `restart: on-failure` on app. | [PR #11](https://github.com/amaralthedoug/testn8nmetaapi/pull/11) | vitest.config.ts |
 | 2026-03-22 | Claude Code | Migration runner rewritten to run all `*.sql` files in order with `schema_migrations` tracking table (idempotent, rollback on error). `002_placeholder.sql` added to close sequence gap. | [PR #10](https://github.com/amaralthedoug/testn8nmetaapi/pull/10) | Docker fixes |
@@ -44,7 +45,6 @@ Priority order — work top to bottom.
 
 | Priority | Item | Notes |
 |---|---|---|
-| 🔴 High | Integration test container stack | Run `app + postgres + mocked n8n` in CI. Prevent mock/prod divergence. All current tests mock the DB — real SQL queries are untested. |
 | 🟢 Low | Prometheus alerting rules | Define alert thresholds for delivery failure rate and latency. |
 | 🟢 Low | Grafana dashboard | Visualize `http_request_duration_seconds` and delivery attempt metrics. |
 

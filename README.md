@@ -22,6 +22,7 @@ The backend owns ingestion, deduplication, persistence, and retries. n8n only re
 - [Failure Handling & Retries](#failure-handling--retries)
 - [Security](#security)
 - [Observability](#observability)
+- [Testing](#testing)
 - [Roadmap](#roadmap)
 
 ---
@@ -331,6 +332,41 @@ See `docs/n8n-workflow.md` for n8n node-by-node setup.
 
 ---
 
+## Testing
+
+```bash
+npm test                  # unit tests (60 tests, ~3s)
+INTEGRATION=true npx vitest run --no-file-parallelism tests/integration/
+                          # integration tests — requires PostgreSQL on localhost:5432
+```
+
+### Unit tests
+
+All unit tests mock the database and external services. No running infrastructure required.
+
+### Integration tests
+
+Integration tests exercise the full HTTP → business logic → real PostgreSQL path with a queue-based fake n8n HTTP server. They are skipped unless `INTEGRATION=true` is set.
+
+**Prerequisites:**
+
+```bash
+# PostgreSQL must be running with a 'leads' database
+createdb leads
+npm run db:migrate
+```
+
+**Files:**
+
+| File | Coverage |
+|---|---|
+| `tests/integration/meta-webhook.integration.test.ts` | `POST /webhooks/meta/lead-ads` — valid HMAC persist+deliver, duplicate, invalid HMAC |
+| `tests/integration/unified-webhook.integration.test.ts` | `POST /webhooks/v1/leads` — instagram persist, duplicate, missing key, bad contract |
+
+Integration tests run sequentially (`--no-file-parallelism`) to avoid concurrent DB writes between test files. CI provisions a `postgres:16` service container automatically.
+
+---
+
 ## Roadmap
 
 | Status | Item |
@@ -342,6 +378,6 @@ See `docs/n8n-workflow.md` for n8n node-by-node setup.
 | ✅ Done | Dead-letter replay API with RBAC |
 | ✅ Done | Multi-tenant routing — per-form/page URL cascade + field mapping |
 | ✅ Done | Instagram SDR integration — unified webhook endpoint + contract v1.0 |
-| 🔜 Planned | Integration test container stack (app + Postgres + mocked n8n) |
+| ✅ Done | Integration test stack — real DB + fake n8n, 7 integration tests, CI Postgres service |
 
 See `docs/ai-agent-roadmap.md` for the full delivery log and backlog.
