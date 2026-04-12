@@ -5,8 +5,11 @@ import fastifyRawBody from 'fastify-raw-body';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifyJwt from '@fastify/jwt';
+import fastifyCookie from '@fastify/cookie';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { registerAuthRoutes } from '../routes/auth.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
 import { registerUnifiedWebhookRoutes } from '../routes/webhooks/unified.js';
@@ -48,6 +51,9 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
     max: env.RATE_LIMIT_MAX,
     timeWindow: env.RATE_LIMIT_WINDOW
   });
+
+  await app.register(fastifyJwt, { secret: env.JWT_SECRET });
+  await app.register(fastifyCookie);
 
   if (options.enableDocs) {
     const swagger = (await import('@fastify/swagger')).default;
@@ -97,6 +103,7 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
     }
   });
 
+  app.register(registerAuthRoutes);
   app.register(registerHealthRoutes);
   app.register(registerMetaRoutes);
   app.register(registerUnifiedWebhookRoutes);
