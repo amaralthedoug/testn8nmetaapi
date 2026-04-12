@@ -5,9 +5,10 @@ import { receiveMetaWebhook, verifyWebhookChallenge } from '../controllers/metaW
 import { correlationIdFromHeader } from '../utils/correlation.js';
 import { env } from '../config/env.js';
 import { verifyMetaSignature } from '../integrations/meta/verification.js';
+import { getSetting } from '../services/settingsService.js';
 
 const ensureMetaSignature = async (request: FastifyRequest, reply: FastifyReply) => {
-  const appSecret = env.META_APP_SECRET;
+  const appSecret = await getSetting('meta_app_secret') ?? env.META_APP_SECRET;
   if (!appSecret) {
     return reply.status(503).send({ error: 'META_APP_SECRET not configured. Complete setup wizard first.' });
   }

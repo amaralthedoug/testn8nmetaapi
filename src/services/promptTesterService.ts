@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { askLLM } from './llmService.js';
 
 export interface CaseItem {
   id: string;
@@ -49,41 +50,14 @@ export function buildMockResponse(input: string): string {
 }
 
 export async function askAnthropic(
-  apiKey: string,
-  model: string,
+  _apiKey: string,
+  _model: string,
   systemPrompt: string,
   userMessage: string,
   maxTokens: number,
   temperature: number,
 ): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Erro Anthropic (${response.status}): ${body}`);
-  }
-
-  const payload = await response.json() as {
-    content?: Array<{ type: string; text?: string }>;
-  };
-
-  const text = payload.content?.find((c) => c.type === 'text')?.text?.trim();
-  if (!text) throw new Error('Resposta da Anthropic sem conteúdo de texto.');
-  return text;
+  return askLLM({ system: systemPrompt, user: userMessage, maxTokens, temperature });
 }
 
 function evaluateCase(item: CaseItem, output: string): { pass: boolean; notes: string } {
