@@ -16,6 +16,7 @@ import { registerUnifiedWebhookRoutes } from '../routes/webhooks/unified.js';
 import { loadRoutingConfig } from '../config/routingConfig.js';
 import { registerTesterRoutes } from '../routes/tester.js';
 import { registerManychatRoutes } from '../routes/manychat.js';
+import { registerSettingsRoutes } from '../routes/settings.js';
 import { LeadIngestionService } from '../services/leadIngestionService.js';
 import { N8nDeliveryService } from '../services/n8nDeliveryService.js';
 
@@ -109,6 +110,7 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
   app.register(registerUnifiedWebhookRoutes);
   app.register(registerTesterRoutes);
   app.register(registerManychatRoutes);
+  app.register(registerSettingsRoutes);
 
   return app;
 };
