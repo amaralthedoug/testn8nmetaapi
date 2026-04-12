@@ -258,7 +258,7 @@
         <div class="err-msg" id="reg-err"></div>
         <button type="submit" class="auth-btn">Criar conta</button>
       </form>
-      <p class="auth-help">Já tem conta? <a href="#" onclick="showScreen('screen-login');return false;">Entrar</a></p>
+      <p class="auth-help">Já tem conta? <a href="#" id="link-to-login">Entrar</a></p>
     </div>
   </div>
 </div>
@@ -275,7 +275,7 @@
         <div class="err-msg" id="login-err"></div>
         <button type="submit" class="auth-btn">Entrar</button>
       </form>
-      <p class="auth-help">Não tem conta? <a href="#" onclick="showScreen('screen-register');return false;">Criar conta</a></p>
+      <p class="auth-help">Não tem conta? <a href="#" id="link-to-register">Criar conta</a></p>
     </div>
   </div>
 </div>
@@ -942,6 +942,15 @@
     if (target) { target.classList.add('visible'); }
   }
   window.showScreen = showScreen;
+
+  var linkToRegister = document.getElementById('link-to-register');
+  if (linkToRegister) {
+    linkToRegister.addEventListener('click', function(e) { e.preventDefault(); showScreen('screen-register'); });
+  }
+  var linkToLogin = document.getElementById('link-to-login');
+  if (linkToLogin) {
+    linkToLogin.addEventListener('click', function(e) { e.preventDefault(); showScreen('screen-login'); });
+  }
 
   function showErr(id, msg) {
     var el = document.getElementById(id);
