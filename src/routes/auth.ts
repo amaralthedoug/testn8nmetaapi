@@ -21,11 +21,6 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     const body = registerSchema.safeParse(req.body);
     if (!body.success) return reply.status(400).send({ error: 'Dados inválidos.' });
 
-    const { rows: existing } = await pool.query('SELECT id FROM users LIMIT 1');
-    if (existing.length > 0) {
-      return reply.status(403).send({ error: 'Registro já foi realizado.' });
-    }
-
     const { name, email, password } = body.data;
     const password_hash = await hashPassword(password);
     await pool.query(
