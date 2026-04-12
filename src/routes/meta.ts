@@ -7,10 +7,15 @@ import { env } from '../config/env.js';
 import { verifyMetaSignature } from '../integrations/meta/verification.js';
 
 const ensureMetaSignature = async (request: FastifyRequest, reply: FastifyReply) => {
+  const appSecret = env.META_APP_SECRET;
+  if (!appSecret) {
+    return reply.status(503).send({ error: 'META_APP_SECRET not configured. Complete setup wizard first.' });
+  }
+
   const signature = request.headers['x-hub-signature-256'] as string | undefined;
   const rawBody = (request as FastifyRequest & { rawBody?: string }).rawBody;
 
-  if (!rawBody || !verifyMetaSignature(rawBody, signature, env.META_APP_SECRET ?? '')) {
+  if (!rawBody || !verifyMetaSignature(rawBody, signature, appSecret)) {
     const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'] as string | undefined);
     return reply.status(401).send({ status: 'rejected', reason: 'invalid_signature', correlationId });
   }
