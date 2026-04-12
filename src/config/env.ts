@@ -9,7 +9,8 @@ if (process.env.NODE_ENV === 'test') {
   process.env.META_APP_SECRET ??= 'test-app-secret';
   process.env.N8N_WEBHOOK_URL ??= 'https://example.com/webhook';
   process.env.N8N_INTERNAL_AUTH_TOKEN ??= 'test-n8n-token';
-  process.env.BACKEND_API_KEY ??= 'test-api-key';
+  // Force-set so webhook tests use a known value regardless of local .env file
+  process.env.BACKEND_API_KEY = 'test-api-key';
   process.env.JWT_SECRET ??= 'test-jwt-secret-exactly-32-chars-x';
 }
 
