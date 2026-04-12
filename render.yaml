@@ -1,0 +1,46 @@
+databases:
+  - name: testn8n-postgres
+    databaseName: leads
+    user: leads_user
+    plan: free
+
+services:
+  - type: web
+    name: testn8nmetaapi
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    preDeployCommand: node scripts/run-migration.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: testn8n-postgres
+          property: connectionString
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: BACKEND_API_KEY
+        sync: false
+      - key: N8N_WEBHOOK_URL
+        sync: false
+      - key: N8N_INTERNAL_AUTH_TOKEN
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: RETRY_MAX_ATTEMPTS
+        value: 5
+      - key: RETRY_BASE_DELAY_MS
+        value: 500
+      - key: RETRY_POLL_INTERVAL_MS
+        value: 5000
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: RATE_LIMIT_WINDOW
+        value: 1 minute
