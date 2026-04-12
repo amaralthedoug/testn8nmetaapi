@@ -26,7 +26,9 @@ const envSchema = z.object({
   RETRY_POLL_INTERVAL_MS: z.coerce.number().default(5000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
-  BACKEND_API_KEY: z.string().min(1)
+  BACKEND_API_KEY: z.string().min(1),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  WEBHOOK_SECRET: z.string().optional()
 });
 
 export const env = envSchema.parse(process.env);
