@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../db/client.js';
 import { hashPassword, comparePassword } from '../services/authService.js';
+import { env } from '../config/env.js';
 
 const registerSchema = z.object({
   name: z.string().min(1),
@@ -58,6 +59,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     reply.setCookie('token', token, {
       httpOnly: true,
       sameSite: 'strict',
+      secure: env.NODE_ENV === 'production',
       path: '/',
       maxAge: 60 * 60 * 24 * 30
     });
