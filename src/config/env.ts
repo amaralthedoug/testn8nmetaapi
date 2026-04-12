@@ -10,6 +10,7 @@ if (process.env.NODE_ENV === 'test') {
   process.env.N8N_WEBHOOK_URL ??= 'https://example.com/webhook';
   process.env.N8N_INTERNAL_AUTH_TOKEN ??= 'test-n8n-token';
   process.env.BACKEND_API_KEY ??= 'test-api-key';
+  process.env.JWT_SECRET ??= 'test-jwt-secret-exactly-32-chars-x';
 }
 
 const envSchema = z.object({
@@ -29,7 +30,10 @@ const envSchema = z.object({
   BACKEND_API_KEY: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().optional(),
   WEBHOOK_SECRET: z.string().optional(),
-  JWT_SECRET: z.string().min(32).default('dev-jwt-secret-change-in-production-32ch')
+  JWT_SECRET: z.string().min(32).default('dev-jwt-secret-change-in-production-32ch').refine(
+    (val) => process.env.NODE_ENV !== 'production' || val !== 'dev-jwt-secret-change-in-production-32ch',
+    { message: 'JWT_SECRET must be changed from the default value in production' }
+  )
 });
 
 export const env = envSchema.parse(process.env);

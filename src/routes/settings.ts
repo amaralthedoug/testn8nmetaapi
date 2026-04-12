@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSetting, setSetting, getAllSettings, clearCache } from '../services/settingsService.js';
 import { askLLM } from '../services/llmService.js';
 import { env } from '../config/env.js';
+import { pool } from '../db/client.js';
 
 const SENSITIVE_KEYS = new Set(['llm_api_key', 'meta_app_secret']);
 const MASKED = '***';
@@ -60,7 +61,11 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
 
     if (!body.success) return reply.status(400).send({ error: 'Dados inválidos.' });
 
-    // Temporarily write to settings so askLLM can read them
+    // Save previous values so we can restore on failure
+    const prevProvider = await getSetting('llm_provider');
+    const prevKey = await getSetting('llm_api_key');
+    const prevModel = await getSetting('llm_model');
+
     await setSetting('llm_provider', body.data.provider);
     await setSetting('llm_api_key', body.data.api_key);
     await setSetting('llm_model', body.data.model);
@@ -74,8 +79,10 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
       });
       return reply.send({ ok: true, message: 'Conexão OK' });
     } catch (err) {
-      // The LLM test failed — clear cache so next read hits DB fresh
-      // The values written above are already in the DB; the user can retry
+      // Restore previous values (or delete if there were none)
+      if (prevProvider) { await setSetting('llm_provider', prevProvider); } else { await pool.query("DELETE FROM settings WHERE key = 'llm_provider'"); }
+      if (prevKey) { await setSetting('llm_api_key', prevKey); } else { await pool.query("DELETE FROM settings WHERE key = 'llm_api_key'"); }
+      if (prevModel) { await setSetting('llm_model', prevModel); } else { await pool.query("DELETE FROM settings WHERE key = 'llm_model'"); }
       clearCache();
       const msg = err instanceof Error ? err.message : 'Erro desconhecido.';
       return reply.status(400).send({ ok: false, message: msg });
