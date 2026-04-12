@@ -8,6 +8,7 @@ import { deliveryAttemptRepository } from '../src/repositories/deliveryAttemptRe
 import { LeadIngestionService } from '../src/services/leadIngestionService.js';
 import { N8nDeliveryService } from '../src/services/n8nDeliveryService.js';
 import type { RoutingConfig } from '../src/config/routingConfig.js';
+import * as settingsService from '../src/services/settingsService.js';
 
 const APP_SECRET = 'test-app-secret';
 const FORM_URL = 'https://form-specific.example.com/webhook';
@@ -28,6 +29,11 @@ describe('ingestion route with routing config', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
 
   beforeEach(async () => {
+    vi.spyOn(settingsService, 'getSetting').mockImplementation(async (key: string) => {
+      if (key === 'meta_app_secret') return APP_SECRET;
+      return undefined;
+    });
+
     app = await createApp({ enableDocs: false });
 
     // Override the decorated service with one that has routing config

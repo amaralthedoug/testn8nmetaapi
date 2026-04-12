@@ -2,14 +2,20 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 import { verifyMetaChallenge } from '../integrations/meta/verification.js';
 import { correlationIdFromHeader } from '../utils/correlation.js';
+import { getSetting } from '../services/settingsService.js';
 
 export const verifyWebhookChallenge = async (request: FastifyRequest, reply: FastifyReply) => {
+  const verifyToken = await getSetting('meta_verify_token') ?? env.META_VERIFY_TOKEN;
+  if (!verifyToken) {
+    return reply.status(503).send({ error: 'META_VERIFY_TOKEN not configured. Complete setup wizard first.' });
+  }
+
   const query = request.query as Record<string, string | undefined>;
   const challenge = verifyMetaChallenge(
     query['hub.mode'],
     query['hub.verify_token'],
     query['hub.challenge'],
-    env.META_VERIFY_TOKEN
+    verifyToken
   );
   if (!challenge) return reply.status(403).send({ error: 'verification failed' });
   return reply.status(200).send(challenge);

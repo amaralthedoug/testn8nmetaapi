@@ -173,6 +173,61 @@
     .wh-result.ok  { display: block; background: #071a0e; border: 1px solid #14532d; color: #4ade80; }
     .wh-result.err { display: block; background: #130808; border: 1px solid #3d1111; color: #f87171; }
 
+    /* ── WIZARD SCREENS ── */
+    .screen { display: none; }
+    .screen.visible { display: block; }
+
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .auth-card { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; }
+    .auth-card h1, .auth-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .auth-card p { color: var(--text-2); font-size: 13px; margin-bottom: 24px; }
+    .auth-card label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
+    .auth-card label input, .auth-card label select { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; }
+    .auth-card label input:focus, .auth-card label select:focus { border-color: var(--muted); }
+    .auth-btn { width: 100%; padding: 11px; background: var(--text); color: var(--bg); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .auth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .auth-help { text-align: center; font-size: 12px; color: var(--text-2); margin-top: 16px; }
+    .err-msg { font-size: 12px; color: var(--fail); margin-top: 6px; display: none; }
+    .err-msg.show { display: block; }
+    .ok-msg { font-size: 12px; color: var(--pass); margin-top: 6px; display: none; }
+    .ok-msg.show { display: block; }
+    .step-indicator { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+
+    /* Provider selector */
+    .provider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .provider-btn { padding: 10px 8px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
+    .provider-btn.selected { border-color: var(--text); color: var(--text); background: var(--border); }
+
+    /* Input with toggle */
+    .input-row { display: flex; gap: 8px; margin-top: 6px; }
+    .input-row input { flex: 1; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; }
+    .input-row input:focus { border-color: var(--muted); }
+    .toggle-btn { padding: 0 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-size: 12px; cursor: pointer; white-space: nowrap; }
+
+    .setup-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 8px; }
+    .setup-actions .auth-btn { width: auto; flex: 1; margin-top: 0; }
+    .btn-ghost { padding: 11px 16px; background: transparent; border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; }
+
+    .success-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    .auth-card.center { text-align: center; }
+
+    /* Settings panel */
+    .panel { position: fixed; top: 0; right: -400px; width: 360px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; transition: right 0.25s ease; z-index: 100; overflow-y: auto; }
+    .panel.open { right: 0; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .panel-header h3 { font-size: 16px; font-weight: 700; }
+    .panel-close { background: none; border: none; color: var(--text-2); font-size: 18px; cursor: pointer; padding: 4px; }
+    .setting-row { padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+    .setting-value { font-family: 'DM Mono', monospace; font-size: 13px; }
+    .setting-edit { margin-top: 8px; display: flex; gap: 8px; display: none; }
+    .setting-edit input { flex: 1; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; }
+    .setting-edit .save-btn { padding: 8px 12px; background: var(--text); color: var(--bg); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .setting-edit-btn { font-size: 11px; color: var(--text-2); background: none; border: 1px solid var(--border-2); border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-top: 4px; }
+    .panel-footer { margin-top: auto; padding-top: 20px; }
+    .logout-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-2); border-radius: 8px; color: var(--fail); font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; }
+
     /* Print */
     @media print {
       body { background: white; color: #111; }
@@ -189,6 +244,125 @@
   </style>
 </head>
 <body>
+
+<!-- SCREEN: register -->
+<div id="screen-register" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Bem-vindo</h1>
+      <p>Crie sua conta para começar a configurar o sistema.</p>
+      <form id="form-register" autocomplete="off">
+        <label>Nome<input type="text" id="reg-name" required autocomplete="off" /></label>
+        <label>Email<input type="email" id="reg-email" required autocomplete="off" /></label>
+        <label>Senha (mín. 8 caracteres)<input type="password" id="reg-password" required minlength="8" autocomplete="new-password" /></label>
+        <div class="err-msg" id="reg-err"></div>
+        <button type="submit" class="auth-btn">Criar conta</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: login -->
+<div id="screen-login" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Entrar</h1>
+      <p>Acesse sua conta para usar o sistema.</p>
+      <form id="form-login" autocomplete="off">
+        <label>Email<input type="email" id="login-email" required autocomplete="off" /></label>
+        <label>Senha<input type="password" id="login-password" required autocomplete="current-password" /></label>
+        <div class="err-msg" id="login-err"></div>
+        <button type="submit" class="auth-btn">Entrar</button>
+      </form>
+      <p class="auth-help">Esqueceu a senha? Entre em contato com o administrador.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: setup-1 (AI provider) -->
+<div id="screen-setup-1" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="step-indicator">PASSO 1 DE 2 — INTELIGÊNCIA ARTIFICIAL</div>
+      <h2>Configurar IA</h2>
+      <p>Escolha o provedor e cole a chave de API da sua conta.</p>
+      <div class="provider-grid">
+        <button class="provider-btn selected" data-provider="anthropic">Anthropic</button>
+        <button class="provider-btn" data-provider="openai">OpenAI</button>
+        <button class="provider-btn" data-provider="gemini">Gemini</button>
+      </div>
+      <label>
+        Chave de API
+        <div class="input-row">
+          <input type="password" id="setup-key" placeholder="Cole a chave aqui" autocomplete="off" />
+          <button type="button" class="toggle-btn" data-target="setup-key">Mostrar</button>
+        </div>
+        <small id="key-hint" style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">Começa com sk-ant-</small>
+      </label>
+      <label style="margin-top:16px;">Modelo<select id="setup-model"></select></label>
+      <div class="ok-msg" id="test-ok">✓ Conexão OK</div>
+      <div class="err-msg" id="test-err"></div>
+      <div class="setup-actions">
+        <button type="button" class="btn-ghost" id="btn-test-llm">Testar conexão</button>
+        <button type="button" class="auth-btn" id="btn-next" disabled>Próximo →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: setup-2 (Meta tokens) -->
+<div id="screen-setup-2" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="step-indicator">PASSO 2 DE 2 — INSTAGRAM / META</div>
+      <h2>Configurar Meta</h2>
+      <p>Esses dados conectam o sistema ao seu app do Instagram.</p>
+      <label>
+        Token de Verificação
+        <input type="text" id="setup-verify" minlength="8" placeholder="Escolha qualquer valor com 8+ caracteres" />
+        <small style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">Você mesmo escolhe. Use o mesmo valor quando configurar o webhook no Meta.</small>
+      </label>
+      <label style="margin-top:16px;">
+        App Secret
+        <div class="input-row">
+          <input type="password" id="setup-secret" placeholder="Meta for Developers → Configurações básicas" />
+          <button type="button" class="toggle-btn" data-target="setup-secret">Mostrar</button>
+        </div>
+      </label>
+      <div class="err-msg" id="setup2-err"></div>
+      <div class="setup-actions">
+        <button type="button" class="btn-ghost" id="btn-back">← Voltar</button>
+        <button type="button" class="auth-btn" id="btn-finish">Salvar e finalizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: setup-done -->
+<div id="screen-setup-done" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card center">
+      <div class="success-icon">✓</div>
+      <h2>Tudo configurado!</h2>
+      <p>O sistema está pronto para uso.</p>
+      <button type="button" class="auth-btn" id="btn-open-app">Abrir o sistema</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: settings -->
+<div id="panel-settings" class="panel">
+  <div class="panel-header">
+    <h3>Configurações</h3>
+    <button class="panel-close" id="btn-close-settings">✕</button>
+  </div>
+  <div id="settings-list"></div>
+  <div class="panel-footer">
+    <button class="logout-btn" id="btn-logout">Sair da conta</button>
+  </div>
+</div>
+
+<div id="screen-app" class="screen">
   <div class="layout">
 
     <header>
@@ -197,6 +371,7 @@
         <div class="logo-name">instagram-sdr <span>/ prompt tester</span></div>
       </div>
       <div class="version-tag">v0.2</div>
+      <button id="btn-open-settings" style="background:none;border:1px solid var(--border-2);color:var(--text-2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;" title="Configurações">⚙</button>
     </header>
 
     <nav class="tab-nav">
@@ -346,6 +521,7 @@
     </div>
 
   </div>
+</div><!-- /#screen-app -->
 
   <script>
     // ── State ──
@@ -739,6 +915,321 @@
 
     init();
     loadCases();
+  </script>
+
+  <script>
+(function () {
+  'use strict';
+
+  var MODELS = {
+    anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-6'],
+    openai: ['gpt-4o-mini', 'gpt-4o'],
+    gemini: ['gemini-2.0-flash', 'gemini-1.5-pro']
+  };
+
+  var KEY_LABELS = {
+    llm_provider: 'Provedor de IA', llm_api_key: 'Chave de API', llm_model: 'Modelo',
+    meta_verify_token: 'Token de Verificação', meta_app_secret: 'App Secret'
+  };
+
+  var selectedProvider = 'anthropic';
+  var testPassed = false;
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function (el) { el.classList.remove('visible'); });
+    var target = document.getElementById(id);
+    if (target) { target.classList.add('visible'); }
+  }
+
+  function showErr(id, msg) {
+    var el = document.getElementById(id);
+    if (!el) { return; }
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function hideMsg(id) {
+    var el = document.getElementById(id);
+    if (el) { el.classList.remove('show'); }
+  }
+
+  // Toggle show/hide password
+  document.querySelectorAll('.toggle-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var targetId = btn.getAttribute('data-target');
+      var input = document.getElementById(targetId);
+      if (!input) { return; }
+      var isPassword = input.getAttribute('type') === 'password';
+      input.setAttribute('type', isPassword ? 'text' : 'password');
+      btn.textContent = isPassword ? 'Ocultar' : 'Mostrar';
+    });
+  });
+
+  // Provider selection
+  document.querySelectorAll('.provider-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectedProvider = btn.getAttribute('data-provider');
+      document.querySelectorAll('.provider-btn').forEach(function (b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      refreshModelList();
+      refreshKeyHint();
+      testPassed = false;
+      document.getElementById('btn-next').disabled = true;
+      hideMsg('test-ok');
+      hideMsg('test-err');
+    });
+  });
+
+  function refreshModelList() {
+    var select = document.getElementById('setup-model');
+    while (select.firstChild) { select.removeChild(select.firstChild); }
+    (MODELS[selectedProvider] || []).forEach(function (m) {
+      var opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      select.appendChild(opt);
+    });
+  }
+
+  function refreshKeyHint() {
+    var hints = { anthropic: 'Começa com sk-ant-', openai: 'Começa com sk-', gemini: 'Chave do Google AI Studio' };
+    var el = document.getElementById('key-hint');
+    if (el) { el.textContent = hints[selectedProvider] || ''; }
+  }
+
+  // Register
+  var formRegister = document.getElementById('form-register');
+  if (formRegister) {
+    formRegister.addEventListener('submit', function (e) {
+      e.preventDefault();
+      hideMsg('reg-err');
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('reg-name').value,
+          email: document.getElementById('reg-email').value,
+          password: document.getElementById('reg-password').value
+        })
+      }).then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      }).then(function (r) {
+        if (!r.ok) { showErr('reg-err', r.data.error || 'Erro ao criar conta.'); return; }
+        initSetup1();
+        showScreen('screen-setup-1');
+      }).catch(function () { showErr('reg-err', 'Erro de conexão.'); });
+    });
+  }
+
+  // Login
+  var formLogin = document.getElementById('form-login');
+  if (formLogin) {
+    formLogin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      hideMsg('login-err');
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('login-email').value,
+          password: document.getElementById('login-password').value
+        })
+      }).then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      }).then(function (r) {
+        if (!r.ok) { showErr('login-err', r.data.error || 'Erro ao entrar.'); return; }
+        if (r.data.setup_complete) { showScreen('screen-app'); } else { initSetup1(); showScreen('screen-setup-1'); }
+      }).catch(function () { showErr('login-err', 'Erro de conexão.'); });
+    });
+  }
+
+  // Test LLM connection
+  var btnTestLlm = document.getElementById('btn-test-llm');
+  if (btnTestLlm) {
+    btnTestLlm.addEventListener('click', function () {
+      hideMsg('test-ok');
+      hideMsg('test-err');
+      btnTestLlm.disabled = true;
+      btnTestLlm.textContent = 'Testando...';
+      fetch('/api/setup/test-llm', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          api_key: document.getElementById('setup-key').value,
+          model: document.getElementById('setup-model').value
+        })
+      }).then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      }).then(function (r) {
+        btnTestLlm.disabled = false;
+        btnTestLlm.textContent = 'Testar conexão';
+        if (r.data.ok) {
+          document.getElementById('test-ok').classList.add('show');
+          testPassed = true;
+          document.getElementById('btn-next').disabled = false;
+        } else {
+          showErr('test-err', r.data.message || 'Erro na conexão.');
+          testPassed = false;
+          document.getElementById('btn-next').disabled = true;
+        }
+      }).catch(function () {
+        btnTestLlm.disabled = false;
+        btnTestLlm.textContent = 'Testar conexão';
+        showErr('test-err', 'Erro de conexão.');
+      });
+    });
+  }
+
+  // Next (setup-1 → setup-2)
+  var btnNext = document.getElementById('btn-next');
+  if (btnNext) {
+    btnNext.addEventListener('click', function () {
+      if (testPassed) { showScreen('screen-setup-2'); }
+    });
+  }
+
+  // Back (setup-2 → setup-1)
+  var btnBack = document.getElementById('btn-back');
+  if (btnBack) { btnBack.addEventListener('click', function () { showScreen('screen-setup-1'); }); }
+
+  // Finish setup
+  var btnFinish = document.getElementById('btn-finish');
+  if (btnFinish) {
+    btnFinish.addEventListener('click', function () {
+      hideMsg('setup2-err');
+      var verifyToken = document.getElementById('setup-verify').value;
+      var appSecret = document.getElementById('setup-secret').value;
+      if (verifyToken.length < 8) { showErr('setup2-err', 'Token de verificação deve ter mínimo 8 caracteres.'); return; }
+      if (!appSecret) { showErr('setup2-err', 'App Secret é obrigatório.'); return; }
+      fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ meta_verify_token: verifyToken, meta_app_secret: appSecret, setup_complete: 'true' })
+      }).then(function (res) {
+        if (res.ok) { showScreen('screen-setup-done'); } else { showErr('setup2-err', 'Erro ao salvar. Tente novamente.'); }
+      }).catch(function () { showErr('setup2-err', 'Erro de conexão.'); });
+    });
+  }
+
+  // Open app from done screen
+  var btnOpenApp = document.getElementById('btn-open-app');
+  if (btnOpenApp) { btnOpenApp.addEventListener('click', function () { showScreen('screen-app'); }); }
+
+  // Settings panel open/close
+  var btnOpenSettings = document.getElementById('btn-open-settings');
+  if (btnOpenSettings) { btnOpenSettings.addEventListener('click', function () { loadSettings(); document.getElementById('panel-settings').classList.add('open'); }); }
+  var btnCloseSettings = document.getElementById('btn-close-settings');
+  if (btnCloseSettings) { btnCloseSettings.addEventListener('click', function () { document.getElementById('panel-settings').classList.remove('open'); }); }
+
+  // Logout
+  var btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function () {
+      fetch('/api/auth/logout', { method: 'POST' }).then(function () { showScreen('screen-login'); document.getElementById('panel-settings').classList.remove('open'); });
+    });
+  }
+
+  // Load settings into panel
+  function loadSettings() {
+    fetch('/api/settings').then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      var list = document.getElementById('settings-list');
+      while (list.firstChild) { list.removeChild(list.firstChild); }
+      var keysToShow = ['llm_provider', 'llm_api_key', 'llm_model', 'meta_verify_token', 'meta_app_secret'];
+      keysToShow.forEach(function (key) {
+        if (!(key in data)) { return; }
+        var row = document.createElement('div');
+        row.className = 'setting-row';
+
+        var labelEl = document.createElement('div');
+        labelEl.className = 'setting-label';
+        labelEl.textContent = KEY_LABELS[key] || key;
+
+        var valueEl = document.createElement('div');
+        valueEl.className = 'setting-value';
+        valueEl.textContent = data[key];
+
+        var editBtn = document.createElement('button');
+        editBtn.className = 'setting-edit-btn';
+        editBtn.textContent = 'Editar';
+
+        var editRow = document.createElement('div');
+        editRow.className = 'setting-edit';
+
+        var editInput = document.createElement('input');
+        editInput.type = key.includes('key') || key.includes('secret') ? 'password' : 'text';
+        editInput.placeholder = 'Novo valor';
+
+        var saveBtn = document.createElement('button');
+        saveBtn.className = 'save-btn';
+        saveBtn.textContent = 'Salvar';
+
+        editRow.appendChild(editInput);
+        editRow.appendChild(saveBtn);
+        row.appendChild(labelEl);
+        row.appendChild(valueEl);
+        row.appendChild(editBtn);
+        row.appendChild(editRow);
+        list.appendChild(row);
+
+        editBtn.addEventListener('click', function () {
+          editRow.style.display = editRow.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        saveBtn.addEventListener('click', function () {
+          var newValue = editInput.value.trim();
+          if (!newValue) { return; }
+          var payload = {};
+          payload[key] = newValue;
+          fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).then(function (res) {
+            if (res.ok) {
+              valueEl.textContent = (key.includes('key') || key.includes('secret')) ? '***' : newValue;
+              editRow.style.display = 'none';
+              editInput.value = '';
+            } else {
+              valueEl.textContent = 'Erro ao salvar';
+            }
+          });
+        });
+      });
+    });
+  }
+
+  function initSetup1() {
+    selectedProvider = 'anthropic';
+    document.querySelectorAll('.provider-btn').forEach(function (b) { b.classList.remove('selected'); });
+    var first = document.querySelector('.provider-btn[data-provider="anthropic"]');
+    if (first) { first.classList.add('selected'); }
+    refreshModelList();
+    refreshKeyHint();
+    testPassed = false;
+    document.getElementById('btn-next').disabled = true;
+  }
+
+  // Initial route on page load
+  function route() {
+    fetch('/api/auth/me').then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (r) {
+      if (r.ok) {
+        if (r.data.setup_complete) { showScreen('screen-app'); } else { initSetup1(); showScreen('screen-setup-1'); }
+      } else {
+        if (r.data.code === 'NO_USER') { showScreen('screen-register'); } else { showScreen('screen-login'); }
+      }
+    }).catch(function () { showScreen('screen-login'); });
+  }
+
+  // Init
+  refreshModelList();
+  refreshKeyHint();
+  route();
+})();
   </script>
 </body>
 </html>
