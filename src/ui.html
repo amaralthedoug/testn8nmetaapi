@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Tester — instagram-sdr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080808;
+      --surface:   #111111;
+      --surface-2: #161616;
+      --border:    #212121;
+      --border-2:  #2a2a2a;
+      --text:      #f0f0f0;
+      --text-2:    #999999;
+      --muted:     #444444;
+      --pass:      #22c55e;
+      --fail:      #ef4444;
+      --grad:      linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+    }
+
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; line-height: 1.6; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+    .layout { max-width: 660px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* Header */
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-diamond { width: 30px; height: 30px; border-radius: 7px; background: var(--grad); display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+    .logo-name { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
+    .logo-name span { color: var(--text-2); font-weight: 400; }
+    .version-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); border: 1px solid var(--border-2); padding: 3px 8px; border-radius: 4px; }
+
+    /* Tabs */
+    .tab-nav { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 8px; border: none; border-radius: 7px; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+    .tab-btn.active { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-2); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Card */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+
+    /* Form */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .field label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-2); margin-bottom: 7px; }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: '▾'; position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 11px; }
+    select, input[type="password"], input[type="text"] { width: 100%; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12.5px; padding: 9px 30px 9px 11px; outline: none; appearance: none; cursor: pointer; transition: border-color 0.15s; }
+    select:focus, input[type="password"]:focus, input[type="text"]:focus { border-color: #7c3aed; }
+    input[type="text"] { padding-right: 11px; cursor: text; }
+
+    /* Mode toggle */
+    .mode-wrap { display: flex; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; padding: 3px; gap: 3px; }
+    .mode-btn { flex: 1; padding: 7px 10px; border: none; border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+    .mode-btn.active { background: var(--surface); color: var(--text); border: 1px solid var(--border-2); }
+    .api-key-field { margin-top: 14px; display: none; }
+    .api-key-field.show { display: block; }
+
+    /* Buttons */
+    .run-btn { width: 100%; margin-top: 20px; padding: 13px; border: none; border-radius: 9px; background: var(--grad); color: white; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .run-btn:hover:not(:disabled) { opacity: 0.88; }
+    .run-btn:active:not(:disabled) { transform: scale(0.99); }
+    .run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Error */
+    .error-box { margin-top: 14px; background: #130808; border: 1px solid #3d1111; border-radius: 8px; padding: 11px 14px; color: #f87171; font-family: 'DM Mono', monospace; font-size: 12px; display: none; }
+    .error-box.show { display: block; }
+
+    /* Section label */
+    .section-label { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Score */
+    .score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .score-counts { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); min-width: 36px; }
+    .score-track { flex: 1; height: 5px; background: var(--border-2); border-radius: 99px; overflow: hidden; }
+    .score-fill { height: 100%; background: var(--grad); border-radius: 99px; width: 0%; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+    .score-pct { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; min-width: 38px; text-align: right; }
+
+    /* Print button */
+    .print-btn { background: none; border: 1px solid var(--border-2); border-radius: 6px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; padding: 5px 12px; cursor: pointer; margin-left: auto; display: block; margin-bottom: 14px; transition: color 0.15s, border-color 0.15s; }
+    .print-btn:hover { color: var(--text); border-color: var(--text-2); }
+
+    /* Case cards */
+    .case-card { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin-bottom: 14px; animation: rise 0.28s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .case-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    .case-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+    .verdict { font-size: 11px; font-weight: 700; }
+    .verdict.pass { color: var(--pass); }
+    .verdict.fail { color: var(--fail); }
+    .case-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .case-notes { padding: 0 14px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    /* Bubbles */
+    .bubble-wrap { display: flex; flex-direction: column; }
+    .bubble-wrap.lead { align-items: flex-start; }
+    .bubble-wrap.sdr  { align-items: flex-end; }
+    .bubble-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted); margin-bottom: 4px; padding: 0 2px; }
+    .bubble { max-width: 86%; padding: 9px 13px; border-radius: 11px; font-family: 'DM Mono', monospace; font-size: 12.5px; line-height: 1.55; }
+    .bubble-wrap.lead .bubble { background: var(--surface-2); border: 1px solid var(--border-2); border-top-left-radius: 3px; color: var(--text-2); }
+    .bubble-wrap.sdr  .bubble { background: var(--surface); border: 1px solid rgba(131,58,180,0.35); border-top-right-radius: 3px; color: var(--text); }
+
+    /* Empty */
+    .empty { text-align: center; padding: 56px 0; color: var(--muted); }
+    .empty-icon { font-size: 28px; margin-bottom: 14px; opacity: 0.35; }
+    .empty-text { font-size: 13px; line-height: 1.7; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; animation: spin 0.55s linear infinite; flex-shrink: 0; }
+
+    /* ── DEMO TAB ── */
+    .demo-config { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .demo-config .field { flex: 1; min-width: 140px; }
+    .demo-config .field label { margin-bottom: 6px; }
+    .demo-config .mode-wrap { flex: 0 0 auto; align-self: flex-end; }
+
+    .chat-area { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; min-height: 320px; max-height: 420px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+    .chat-empty { margin: auto; text-align: center; color: var(--muted); }
+    .chat-empty-icon { font-size: 24px; opacity: 0.3; margin-bottom: 8px; }
+    .chat-empty-text { font-size: 12px; }
+
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input { flex: 1; background: var(--surface); border: 1px solid var(--border-2); border-radius: 9px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 11px 14px; outline: none; transition: border-color 0.15s; }
+    .chat-input:focus { border-color: #7c3aed; }
+    .chat-input::placeholder { color: var(--muted); }
+    .send-btn { padding: 11px 18px; border: none; border-radius: 9px; background: var(--grad); color: white; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+    .send-btn:hover:not(:disabled) { opacity: 0.88; }
+    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .reset-btn { background: none; border: 1px solid var(--border-2); border-radius: 7px; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; padding: 6px 12px; cursor: pointer; transition: color 0.15s; }
+    .reset-btn:hover { color: var(--text-2); }
+
+    .demo-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .demo-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+    .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 11px; border-top-right-radius: 3px; width: fit-content; align-self: flex-end; }
+    .typing-dot { width: 5px; height: 5px; background: var(--muted); border-radius: 50%; animation: typingPulse 1.2s ease infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingPulse { 0%,60%,100% { opacity: 0.3; transform: scale(1); } 30% { opacity: 1; transform: scale(1.2); } }
+
+    .demo-api-key { margin-bottom: 14px; display: none; }
+    .demo-api-key.show { display: block; }
+
+    /* ── HISTÓRICO TAB ── */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 16px 18px; display: flex; align-items: center; gap: 16px; cursor: default; animation: rise 0.2s ease both; }
+    .history-score { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; min-width: 52px; text-align: center; }
+    .history-score.good { color: var(--pass); }
+    .history-score.bad  { color: var(--fail); }
+    .history-score.mid  { color: #f59e0b; }
+    .history-info { flex: 1; min-width: 0; }
+    .history-prompt { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+    .history-counts { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); white-space: nowrap; }
+    .history-loading { text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; }
+
+    /* ── WEBHOOK TAB ── */
+    .wh-form { display: flex; flex-direction: column; gap: 14px; }
+    .wh-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .wh-result { margin-top: 16px; border-radius: 10px; padding: 14px 16px; font-family: 'DM Mono', monospace; font-size: 12.5px; line-height: 1.6; display: none; }
+    .wh-result.ok  { display: block; background: #071a0e; border: 1px solid #14532d; color: #4ade80; }
+    .wh-result.err { display: block; background: #130808; border: 1px solid #3d1111; color: #f87171; }
+
+    /* Print */
+    @media print {
+      body { background: white; color: #111; }
+      .tab-nav, .card, .print-btn, #emptyState { display: none !important; }
+      #tab-tester { display: block !important; }
+      #resultsSection { display: block !important; }
+      .case-card { break-inside: avoid; border: 1px solid #ddd; }
+      .bubble-wrap.lead .bubble { background: #f5f5f5; border-color: #ddd; color: #333; }
+      .bubble-wrap.sdr  .bubble { background: #fff; border-color: #b39ddb; color: #111; }
+      .case-notes { color: #777; }
+      .score-track { background: #eee; }
+      header .version-tag { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <header>
+      <div class="logo">
+        <div class="logo-diamond">◆</div>
+        <div class="logo-name">instagram-sdr <span>/ prompt tester</span></div>
+      </div>
+      <div class="version-tag">v0.2</div>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn" onclick="switchTab('tester')">Validar Prompt</button>
+      <button class="tab-btn active" onclick="switchTab('demo')">Demo ao vivo</button>
+      <button class="tab-btn" onclick="switchTab('historico')">Histórico</button>
+      <button class="tab-btn" onclick="switchTab('webhook')">Testar Integração</button>
+    </nav>
+
+    <!-- ── TAB: TESTAR ── -->
+    <div id="tab-tester" class="tab-content">
+      <div class="card">
+        <div class="form-row">
+          <div class="field">
+            <label>Prompt</label>
+            <div class="select-wrap"><select id="promptSelect"><option value="">carregando...</option></select></div>
+          </div>
+          <div class="field">
+            <label>Casos</label>
+            <div class="select-wrap"><select id="casesSelect"><option value="">carregando...</option></select></div>
+          </div>
+        </div>
+        <div class="field" id="testerModeField">
+          <label>Modo</label>
+          <div class="mode-wrap">
+            <button class="mode-btn active" data-mode="mock" onclick="setMode('mock','tester')">◎ &nbsp;Simulado</button>
+            <button class="mode-btn" data-mode="real" onclick="setMode('real','tester')">⚡ &nbsp;API Real</button>
+          </div>
+        </div>
+        <div class="api-key-field" id="apiKeyField">
+          <div class="field" style="margin-top:14px">
+            <label>Anthropic API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-ant-...">
+          </div>
+        </div>
+        <div class="error-box" id="errorBox"></div>
+        <button class="run-btn" id="runBtn" onclick="runTest()">▶ &nbsp;Rodar simulação</button>
+      </div>
+
+      <div id="resultsSection" style="display:none">
+        <div class="section-label">Resultados</div>
+        <button class="print-btn" onclick="window.print()">⎙ &nbsp;Exportar PDF</button>
+        <div class="score-row">
+          <span class="score-counts" id="scoreCounts">—</span>
+          <div class="score-track"><div class="score-fill" id="scoreFill"></div></div>
+          <span class="score-pct" id="scorePct">—</span>
+        </div>
+        <div id="resultsList"></div>
+      </div>
+
+      <div id="emptyState" class="empty">
+        <div class="empty-icon">◎</div>
+        <div class="empty-text">Selecione um prompt e rode a simulação<br>para ver as conversas aqui.</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: DEMO ── -->
+    <div id="tab-demo" class="tab-content active">
+      <div class="card" style="padding-bottom:18px">
+        <div class="demo-config">
+          <div class="field">
+            <label>Prompt</label>
+            <div class="select-wrap"><select id="demoPromptSelect"><option value="">carregando...</option></select></div>
+          </div>
+          <div class="field" id="demoModeField" style="flex:0 0 auto">
+            <label>Modo</label>
+            <div class="mode-wrap">
+              <button class="mode-btn active" data-mode="mock" onclick="setMode('mock','demo')">◎ &nbsp;Simulado</button>
+              <button class="mode-btn" data-mode="real" onclick="setMode('real','demo')">⚡ &nbsp;Real</button>
+            </div>
+          </div>
+        </div>
+        <div class="demo-api-key" id="demoApiKeyField">
+          <div class="field">
+            <label>Anthropic API Key</label>
+            <input type="password" id="demoApiKey" placeholder="sk-ant-...">
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-controls">
+        <span class="demo-label">Conversa</span>
+        <button class="reset-btn" onclick="resetDemo()">↺ &nbsp;Limpar</button>
+      </div>
+
+      <div class="chat-area" id="chatArea">
+        <div class="chat-empty" id="chatEmpty">
+          <div class="chat-empty-icon">◎</div>
+          <div class="chat-empty-text">Digite uma mensagem como se fosse o lead</div>
+        </div>
+      </div>
+
+      <div class="error-box" id="demoErrorBox"></div>
+
+      <div class="chat-input-row">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Ex: Oi, quero saber sobre botox..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+
+    <!-- ── TAB: WEBHOOK ── -->
+    <div id="tab-webhook" class="tab-content">
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Dados do lead</div>
+        <div class="wh-form">
+          <div class="wh-row">
+            <div class="field">
+              <label>Handle Instagram</label>
+              <input type="text" id="wh-handle" placeholder="@usuario">
+            </div>
+            <div class="field">
+              <label>WhatsApp</label>
+              <input type="text" id="wh-whatsapp" placeholder="11999999999">
+            </div>
+          </div>
+          <div class="field">
+            <label>Primeira mensagem</label>
+            <input type="text" id="wh-firstMessage" placeholder="Ex: Oi, quero saber sobre botox">
+          </div>
+          <div class="wh-row">
+            <div class="field">
+              <label>Procedimento de interesse</label>
+              <input type="text" id="wh-procedimento" placeholder="Ex: limpeza de pele">
+            </div>
+            <div class="field">
+              <label>Quando quer fazer?</label>
+              <input type="text" id="wh-janela" placeholder="Ex: este mês">
+            </div>
+          </div>
+          <div class="field">
+            <label>Cidade / Região</label>
+            <input type="text" id="wh-regiao" placeholder="Ex: Vila Madalena, SP">
+          </div>
+        </div>
+        <div class="error-box" id="wh-errorBox"></div>
+        <div class="wh-result" id="wh-result"></div>
+        <button class="run-btn" id="wh-btn" onclick="sendLead()">▶ &nbsp;Enviar Lead</button>
+      </div>
+    </div>
+
+    <!-- ── TAB: HISTÓRICO ── -->
+    <div id="tab-historico" class="tab-content">
+      <div class="section-label">Últimos testes</div>
+      <div id="historyContent">
+        <div class="history-loading">carregando...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── State ──
+    let testerMode = 'mock';
+    let demoMode   = 'mock';
+    let demoMessages = [];
+    let serverHasKey = false;
+
+    // ── Init ──
+    async function init() {
+      const [prompts, config] = await Promise.all([
+        fetch('/api/prompts').then(r => r.json()).catch(() => []),
+        fetch('/api/config').then(r => r.json()).catch(() => ({ hasApiKey: false })),
+      ]);
+      fillSelect('promptSelect', prompts, '.md');
+      fillSelect('demoPromptSelect', prompts, '.md');
+
+      if (config.hasApiKey) {
+        serverHasKey = true;
+        testerMode = 'real';
+        demoMode = 'real';
+        document.getElementById('testerModeField').style.display = 'none';
+        document.getElementById('demoModeField').style.display = 'none';
+      }
+    }
+
+    function fillSelect(id, files, ext) {
+      const el = document.getElementById(id);
+      el.replaceChildren();
+      if (!files.length) {
+        const opt = document.createElement('option');
+        opt.textContent = 'nenhum arquivo encontrado';
+        el.appendChild(opt);
+        return;
+      }
+      files.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f.replace(ext, '');
+        el.appendChild(opt);
+      });
+    }
+
+    // ── Tabs ──
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        const names = ['tester','demo','historico','webhook'];
+        b.classList.toggle('active', names[i] === name);
+      });
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      if (name === 'historico') loadHistory();
+    }
+
+    // ── Mode toggles ──
+    function setMode(m, tab) {
+      if (tab === 'tester') {
+        testerMode = m;
+        document.querySelectorAll('#tab-tester .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+        document.getElementById('apiKeyField').classList.toggle('show', m === 'real');
+      } else {
+        demoMode = m;
+        document.querySelectorAll('#tab-demo .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+        document.getElementById('demoApiKeyField').classList.toggle('show', m === 'real');
+      }
+    }
+
+    // ── Tester ──
+    async function runTest() {
+      const prompt = document.getElementById('promptSelect').value;
+      const cases  = document.getElementById('casesSelect').value;
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const errBox = document.getElementById('errorBox');
+      errBox.classList.remove('show');
+
+      if (!prompt || !cases) return showErr(errBox, 'Selecione prompt e casos.');
+      if (testerMode === 'real' && !apiKey && !serverHasKey) return showErr(errBox, 'Informe a API Key para o modo real.');
+
+      const btn = document.getElementById('runBtn');
+      setLoading(btn, true);
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('resultsSection').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, cases, mock: testerMode === 'mock', apiKey: apiKey || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) return showErr(errBox, data.error || 'Erro desconhecido.');
+        renderResults(data);
+      } catch (e) {
+        showErr(errBox, e.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    function renderResults({ results, passed, total, score }) {
+      document.getElementById('resultsSection').style.display = 'block';
+      document.getElementById('scoreCounts').textContent = passed + '/' + total;
+      document.getElementById('scorePct').textContent = score + '%';
+      setTimeout(() => { document.getElementById('scoreFill').style.width = score + '%'; }, 40);
+
+      const list = document.getElementById('resultsList');
+      list.replaceChildren();
+
+      results.forEach((r, i) => {
+        const card = document.createElement('div');
+        card.className = 'case-card';
+        card.style.animationDelay = (i * 70) + 'ms';
+
+        const head = document.createElement('div');
+        head.className = 'case-head';
+        const idEl = document.createElement('span');
+        idEl.className = 'case-id';
+        idEl.textContent = r.id;
+        const verdict = document.createElement('span');
+        verdict.className = 'verdict ' + (r.pass ? 'pass' : 'fail');
+        verdict.textContent = r.pass ? '✓ passou' : '✗ falhou';
+        head.append(idEl, verdict);
+
+        const body = document.createElement('div');
+        body.className = 'case-body';
+        body.append(makeBubble('lead', 'Lead', r.input), makeBubble('sdr', 'SDR', r.output));
+
+        const notes = document.createElement('div');
+        notes.className = 'case-notes';
+        notes.textContent = r.notes;
+
+        card.append(head, body, notes);
+        list.appendChild(card);
+      });
+    }
+
+    // ── Demo ──
+    async function sendMessage() {
+      const input  = document.getElementById('chatInput');
+      const text   = input.value.trim();
+      const prompt = document.getElementById('demoPromptSelect').value;
+      const apiKey = document.getElementById('demoApiKey').value.trim();
+      const errBox = document.getElementById('demoErrorBox');
+      errBox.classList.remove('show');
+
+      if (!text) return;
+      if (!prompt) return showErr(errBox, 'Selecione um prompt.');
+      if (demoMode === 'real' && !apiKey && !serverHasKey) return showErr(errBox, 'Informe a API Key para o modo real.');
+
+      input.value = '';
+      document.getElementById('chatEmpty')?.remove();
+
+      appendBubble('lead', text);
+      demoMessages.push({ role: 'user', content: text });
+
+      const typing = appendTyping();
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      input.disabled = true;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            messages: demoMessages,
+            mock: demoMode === 'mock',
+            apiKey: apiKey || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { typing.remove(); return showErr(errBox, data.error || 'Erro desconhecido.'); }
+        // Keep typing indicator visible for a duration proportional to response length
+        const typingDelay = Math.min(Math.max(data.output.length * 18, 800), 2800);
+        await new Promise(r => setTimeout(r, typingDelay));
+        typing.remove();
+        appendBubble('sdr', data.output);
+        demoMessages.push({ role: 'assistant', content: data.output });
+      } catch (e) {
+        typing.remove();
+        showErr(errBox, e.message);
+      } finally {
+        btn.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    function appendBubble(side, text) {
+      const area = document.getElementById('chatArea');
+      const wrap = makeBubble(side, side === 'lead' ? 'Lead' : 'SDR', text);
+      wrap.style.animation = 'rise 0.2s ease both';
+      area.appendChild(wrap);
+      area.scrollTop = area.scrollHeight;
+      return wrap;
+    }
+
+    function appendTyping() {
+      const area = document.getElementById('chatArea');
+      const el = document.createElement('div');
+      el.className = 'typing-indicator';
+      el.style.alignSelf = 'flex-end';
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'typing-dot';
+        el.appendChild(dot);
+      }
+      area.appendChild(el);
+      area.scrollTop = area.scrollHeight;
+      return el;
+    }
+
+    function resetDemo() {
+      demoMessages = [];
+      const area = document.getElementById('chatArea');
+      area.replaceChildren();
+      const empty = document.createElement('div');
+      empty.className = 'chat-empty';
+      empty.id = 'chatEmpty';
+      const icon = document.createElement('div');
+      icon.className = 'chat-empty-icon';
+      icon.textContent = '◎';
+      const txt = document.createElement('div');
+      txt.className = 'chat-empty-text';
+      txt.textContent = 'Digite uma mensagem como se fosse o lead';
+      empty.append(icon, txt);
+      area.appendChild(empty);
+    }
+
+    // ── Histórico ──
+    async function loadHistory() {
+      const content = document.getElementById('historyContent');
+      content.replaceChildren();
+
+      const loading = document.createElement('div');
+      loading.className = 'history-loading';
+      loading.textContent = 'carregando...';
+      content.appendChild(loading);
+
+      const runs = await fetch('/api/results').then(r => r.json()).catch(() => []);
+      content.replaceChildren();
+
+      if (!runs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        const icon = document.createElement('div');
+        icon.className = 'empty-icon';
+        icon.textContent = '◎';
+        const txt = document.createElement('div');
+        txt.className = 'empty-text';
+        txt.textContent = 'Nenhum teste rodado ainda.\nRode o primeiro na aba Testar.';
+        empty.append(icon, txt);
+        content.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement('div');
+      list.className = 'history-list';
+
+      runs.forEach((r, i) => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.style.animationDelay = (i * 40) + 'ms';
+
+        const score = document.createElement('div');
+        score.className = 'history-score ' + (r.score >= 80 ? 'good' : r.score >= 50 ? 'mid' : 'bad');
+        score.textContent = r.score + '%';
+
+        const info = document.createElement('div');
+        info.className = 'history-info';
+
+        const promptName = document.createElement('div');
+        promptName.className = 'history-prompt';
+        promptName.textContent = String(r.promptPath ?? '').replace('prompts/', '').replace('.md', '') || '—';
+
+        const meta = document.createElement('div');
+        meta.className = 'history-meta';
+        const date = r.generatedAt ? new Date(String(r.generatedAt)).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+        meta.textContent = date + (r.mock ? ' · simulado' : ' · api real') + (r.niche ? ' · ' + r.niche : '');
+
+        info.append(promptName, meta);
+
+        const counts = document.createElement('div');
+        counts.className = 'history-counts';
+        counts.textContent = r.passed + '/' + r.total;
+
+        card.append(score, info, counts);
+        list.appendChild(card);
+      });
+
+      content.appendChild(list);
+    }
+
+    // ── Webhook ──
+    async function sendLead() {
+      const handle      = document.getElementById('wh-handle').value.trim();
+      const firstMessage= document.getElementById('wh-firstMessage').value.trim();
+      const procedimento= document.getElementById('wh-procedimento').value.trim();
+      const janela      = document.getElementById('wh-janela').value.trim();
+      const regiao      = document.getElementById('wh-regiao').value.trim();
+      const whatsapp    = document.getElementById('wh-whatsapp').value.trim();
+      const errBox      = document.getElementById('wh-errorBox');
+      const result      = document.getElementById('wh-result');
+      errBox.classList.remove('show');
+      result.className  = 'wh-result';
+
+      if (!handle || !firstMessage || !procedimento || !janela || !regiao) {
+        return showErr(errBox, 'Preencha todos os campos obrigatórios (exceto WhatsApp).');
+      }
+
+      const btn = document.getElementById('wh-btn');
+      setLoadingWebhook(btn, true);
+
+      try {
+        const body = { handle, firstMessage, procedimento, janela, regiao };
+        if (whatsapp) body.whatsapp = whatsapp;
+
+        const res = await fetch('/api/webhook/manychat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          result.className = 'wh-result ok';
+          result.textContent = '✓ Lead enviado com sucesso!';
+        } else {
+          result.className = 'wh-result err';
+          result.textContent = '⚠ ' + (data.error || 'Erro desconhecido.');
+        }
+      } catch (e) {
+        result.className = 'wh-result err';
+        result.textContent = '⚠ ' + e.message;
+      } finally {
+        setLoadingWebhook(btn, false);
+      }
+    }
+
+    function setLoadingWebhook(btn, loading) {
+      btn.disabled = loading;
+      btn.replaceChildren();
+      if (loading) {
+        const s = document.createElement('div');
+        s.className = 'spinner';
+        btn.appendChild(s);
+        btn.appendChild(document.createTextNode(' Enviando...'));
+      } else {
+        btn.appendChild(document.createTextNode('▶ \u00a0Enviar Lead'));
+      }
+    }
+
+    // ── Helpers ──
+    function makeBubble(side, label, text) {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap ' + side;
+      const lbl = document.createElement('div');
+      lbl.className = 'bubble-label';
+      lbl.textContent = label;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      wrap.append(lbl, bubble);
+      return wrap;
+    }
+
+    function showErr(box, msg) {
+      box.textContent = '⚠ ' + msg;
+      box.classList.add('show');
+    }
+
+    function setLoading(btn, loading) {
+      btn.disabled = loading;
+      btn.replaceChildren();
+      if (loading) {
+        const s = document.createElement('div');
+        s.className = 'spinner';
+        btn.appendChild(s);
+        btn.appendChild(document.createTextNode(' Rodando...'));
+      } else {
+        btn.appendChild(document.createTextNode('▶ \u00a0Rodar simulação'));
+      }
+    }
+
+    // Load cases only for tester tab
+    async function loadCases() {
+      const cases = await fetch('/api/cases').then(r => r.json()).catch(() => []);
+      fillSelect('casesSelect', cases, '.json');
+    }
+
+    init();
+    loadCases();
+  </script>
+</body>
+</html>
