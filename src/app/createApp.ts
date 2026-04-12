@@ -77,10 +77,23 @@ export const createApp = async (options: CreateAppOptions = { enableDocs: false 
     });
   }
 
-  // NOTE: helmet applies globally to all routes (uses fastify-plugin).
-  // If Swagger UI fails to render in browser due to CSP, pass staticCSP: true
-  // to the swaggerUi registration options above.
-  app.register(helmet);
+  // NOTE: helmet applies globally. script-src allows 'unsafe-inline' for the
+  // single-file ui.html which uses inline <script> blocks.
+  app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        imgSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'self'"]
+      }
+    }
+  });
 
   // Metrics — always enabled, excludes /metrics and /docs from route histograms
   // fastify-metrics@11.0.0 uses CommonJS __esModule interop — the ESM default export
