@@ -1,0 +1,21 @@
+{
+  "client": "clinica-exemplo-estetica",
+  "niche": "estetica",
+  "cases": [
+    {
+      "id": "c1",
+      "input": "Oi, queria saber valores de botox",
+      "expected": "entender objetivo e prazo antes de passar faixa inicial"
+    },
+    {
+      "id": "c2",
+      "input": "Tenho medo de doer",
+      "expected": "acolher dúvida e sugerir avaliação segura"
+    },
+    {
+      "id": "c3",
+      "input": "Quero fazer limpeza de pele esse mês",
+      "expected": "qualificar intenção e encaminhar para próximo passo"
+    }
+  ]
+}
