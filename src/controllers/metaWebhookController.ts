@@ -9,7 +9,7 @@ export const verifyWebhookChallenge = async (request: FastifyRequest, reply: Fas
     query['hub.mode'],
     query['hub.verify_token'],
     query['hub.challenge'],
-    env.META_VERIFY_TOKEN
+    env.META_VERIFY_TOKEN ?? ''
   );
   if (!challenge) return reply.status(403).send({ error: 'verification failed' });
   return reply.status(200).send(challenge);

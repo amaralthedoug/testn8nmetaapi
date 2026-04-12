@@ -17,8 +17,8 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1),
-  META_VERIFY_TOKEN: z.string().min(1),
-  META_APP_SECRET: z.string().min(1),
+  META_VERIFY_TOKEN: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
   N8N_WEBHOOK_URL: z.string().url(),
   N8N_INTERNAL_AUTH_TOKEN: z.string().min(1),
   RETRY_MAX_ATTEMPTS: z.coerce.number().default(5),
@@ -28,7 +28,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   BACKEND_API_KEY: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().optional(),
-  WEBHOOK_SECRET: z.string().optional()
+  WEBHOOK_SECRET: z.string().optional(),
+  JWT_SECRET: z.string().min(32).default('dev-jwt-secret-change-in-production-32ch')
 });
 
 export const env = envSchema.parse(process.env);
