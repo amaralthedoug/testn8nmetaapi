@@ -16,7 +16,7 @@ describe('loadRoutingConfig', () => {
       Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     );
 
-    const { loadRoutingConfig } = await import('../src/config/routingConfig.js');
+    const { loadRoutingConfig } = await import('../src/routing/config.js');
     const result = await loadRoutingConfig();
     expect(result).toBeNull();
   });
@@ -28,7 +28,7 @@ describe('loadRoutingConfig', () => {
     });
     vi.spyOn(fs, 'readFile').mockResolvedValue(valid as never);
 
-    const { loadRoutingConfig } = await import('../src/config/routingConfig.js');
+    const { loadRoutingConfig } = await import('../src/routing/config.js');
     const result = await loadRoutingConfig();
     expect(result).toMatchObject({ default: { url: 'https://example.com/webhook' }, pages: [] });
   });
@@ -37,14 +37,14 @@ describe('loadRoutingConfig', () => {
     const invalid = JSON.stringify({ pages: [{ pageId: 123 }] }); // pageId must be string
     vi.spyOn(fs, 'readFile').mockResolvedValue(invalid as never);
 
-    const { loadRoutingConfig } = await import('../src/config/routingConfig.js');
+    const { loadRoutingConfig } = await import('../src/routing/config.js');
     await expect(loadRoutingConfig()).rejects.toThrow();
   });
 
   it('throws when routing.json exists but contains invalid JSON', async () => {
     vi.spyOn(fs, 'readFile').mockResolvedValue('not valid json' as never);
 
-    const { loadRoutingConfig } = await import('../src/config/routingConfig.js');
+    const { loadRoutingConfig } = await import('../src/routing/config.js');
     await expect(loadRoutingConfig()).rejects.toThrow();
   });
 });

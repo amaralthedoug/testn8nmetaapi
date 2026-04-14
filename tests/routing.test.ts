@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveRoute } from '../src/routing/resolveRoute.js';
-import type { RoutingConfig } from '../src/config/routingConfig.js';
+import type { RoutingConfig } from '../src/routing/config.js';
 import { applyFieldMap } from '../src/routing/applyFieldMap.js';
 import type { NormalizedLead } from '../src/types/domain.js';
 

@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 import { resolveRoute } from '../routing/resolveRoute.js';
 import { applyFieldMap } from '../routing/applyFieldMap.js';
 import { env } from '../config/env.js';
-import type { RoutingConfig } from '../config/routingConfig.js';
+import type { RoutingConfig } from '../routing/config.js';
 
 export type LeadIngestionResult =
   | { accepted: true }

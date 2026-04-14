@@ -1,5 +1,5 @@
 import type { NormalizedLead } from '../types/domain.js';
-import type { PromotableField } from '../config/routingConfig.js';
+import type { PromotableField } from './config.js';
 
 export const applyFieldMap = (
   lead: NormalizedLead,

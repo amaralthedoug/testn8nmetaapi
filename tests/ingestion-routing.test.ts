@@ -7,7 +7,7 @@ import { leadRepository } from '../src/repositories/leadRepository.js';
 import { deliveryAttemptRepository } from '../src/repositories/deliveryAttemptRepository.js';
 import { LeadIngestionService } from '../src/services/leadIngestionService.js';
 import { N8nDeliveryService } from '../src/services/n8nDeliveryService.js';
-import type { RoutingConfig } from '../src/config/routingConfig.js';
+import type { RoutingConfig } from '../src/routing/config.js';
 import * as settingsService from '../src/services/settingsService.js';
 
 const APP_SECRET = 'test-app-secret';

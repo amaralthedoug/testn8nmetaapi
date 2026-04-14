@@ -13,7 +13,7 @@ import { registerAuthRoutes } from '../routes/auth.js';
 import { registerMetaRoutes } from '../routes/meta.js';
 import { registerHealthRoutes } from '../routes/health.js';
 import { registerUnifiedWebhookRoutes } from '../routes/webhooks/unified.js';
-import { loadRoutingConfig } from '../config/routingConfig.js';
+import { loadRoutingConfig } from '../routing/config.js';
 import { registerTesterRoutes } from '../routes/tester.js';
 import { registerManychatRoutes } from '../routes/manychat.js';
 import { registerSettingsRoutes } from '../routes/settings.js';

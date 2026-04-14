@@ -1,4 +1,4 @@
-import type { RoutingConfig, PromotableField } from '../config/routingConfig.js';
+import type { RoutingConfig, PromotableField } from './config.js';
 
 export type RouteMatch = {
   url: string;
