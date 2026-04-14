@@ -194,9 +194,23 @@
     .step-indicator { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
 
     /* Provider selector */
-    .provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .provider-btn { padding: 10px 8px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
+    .provider-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+    .provider-btn { position: relative; padding: 12px 10px 10px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 10px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .provider-btn .p-icon { font-size: 18px; line-height: 1; }
+    .provider-btn .p-name { font-size: 11px; }
+    .provider-btn .p-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 3px; margin-top: 2px; }
+    .provider-btn .p-badge.free { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
     .provider-btn.selected { border-color: var(--text); color: var(--text); background: var(--border); }
+
+    /* Key hint with link */
+    .key-hint-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+    .key-hint-text { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-2); }
+    .key-hint-link { font-size: 11px; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border-2); transition: color 0.15s; }
+    .key-hint-link:hover { color: var(--text-2); }
+
+    /* Next-button helper */
+    .next-helper { font-size: 11px; color: var(--muted); text-align: right; margin-top: 6px; display: none; }
+    .next-helper.show { display: block; }
 
     /* Input with toggle */
     .input-row { display: flex; gap: 8px; margin-top: 6px; }
@@ -284,30 +298,58 @@
 <div id="screen-setup-1" class="screen">
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="step-indicator">PASSO 1 DE 2 — INTELIGÊNCIA ARTIFICIAL</div>
-      <h2>Configurar IA</h2>
-      <p>Escolha o provedor e cole a chave de API da sua conta.</p>
-      <div class="provider-grid">
-        <button class="provider-btn selected" data-provider="anthropic">Anthropic</button>
-        <button class="provider-btn" data-provider="openai">OpenAI</button>
-        <button class="provider-btn" data-provider="gemini">Gemini</button>
-        <button class="provider-btn" data-provider="openrouter">OpenRouter</button>
+      <div class="step-indicator">
+        <span style="color:var(--text);font-weight:700;">1</span><span style="color:var(--border-2);">/2</span>
+        &nbsp;·&nbsp; Inteligência Artificial
       </div>
-      <label>
+      <h2 style="margin-top:8px;">Qual IA você vai usar?</h2>
+      <p>Escolha um provedor e cole sua chave de API. O OpenRouter tem modelos gratuitos.</p>
+
+      <div class="provider-grid" style="margin-top:20px;">
+        <button class="provider-btn selected" data-provider="anthropic">
+          <span class="p-icon">🤖</span>
+          <span class="p-name">Anthropic</span>
+        </button>
+        <button class="provider-btn" data-provider="openai">
+          <span class="p-icon">⚡</span>
+          <span class="p-name">OpenAI</span>
+        </button>
+        <button class="provider-btn" data-provider="gemini">
+          <span class="p-icon">✦</span>
+          <span class="p-name">Gemini</span>
+        </button>
+        <button class="provider-btn" data-provider="openrouter">
+          <span class="p-icon">🔀</span>
+          <span class="p-name">OpenRouter</span>
+          <span class="p-badge free">FREE</span>
+        </button>
+      </div>
+
+      <label style="margin-top:4px;">
         Chave de API
         <div class="input-row">
-          <input type="password" id="setup-key" placeholder="Cole a chave aqui" autocomplete="off" />
+          <input type="password" id="setup-key" placeholder="sk-ant-..." autocomplete="off" />
           <button type="button" class="toggle-btn" data-target="setup-key">Mostrar</button>
         </div>
-        <small id="key-hint" style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">Começa com sk-ant-</small>
+        <div class="key-hint-row">
+          <span class="key-hint-text" id="key-hint">Começa com sk-ant-</span>
+          <a class="key-hint-link" id="key-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Obter chave ↗</a>
+        </div>
       </label>
-      <label style="margin-top:16px;">Modelo<select id="setup-model"></select></label>
-      <div class="ok-msg" id="test-ok">✓ Conexão OK</div>
+
+      <label style="margin-top:16px;">
+        Modelo
+        <select id="setup-model"></select>
+      </label>
+
+      <div class="ok-msg" id="test-ok" style="margin-top:16px;">✓ Conexão testada com sucesso</div>
       <div class="err-msg" id="test-err"></div>
-      <div class="setup-actions">
+
+      <div class="setup-actions" style="margin-top:20px;">
         <button type="button" class="btn-ghost" id="btn-test-llm">Testar conexão</button>
         <button type="button" class="auth-btn" id="btn-next" disabled>Próximo →</button>
       </div>
+      <div class="next-helper show" id="next-helper">↑ Teste a conexão antes de continuar</div>
     </div>
   </div>
 </div>
@@ -996,6 +1038,8 @@
       refreshKeyHint();
       testPassed = false;
       document.getElementById('btn-next').disabled = true;
+      var helper = document.getElementById('next-helper');
+      if (helper) { helper.classList.add('show'); }
       hideMsg('test-ok');
       hideMsg('test-err');
     });
@@ -1012,10 +1056,21 @@
     });
   }
 
+  var PROVIDER_META = {
+    anthropic:   { hint: 'Começa com sk-ant-',     placeholder: 'sk-ant-...',    link: 'https://console.anthropic.com/settings/keys',       linkLabel: 'Obter chave ↗' },
+    openai:      { hint: 'Começa com sk-',          placeholder: 'sk-...',         link: 'https://platform.openai.com/api-keys',              linkLabel: 'Obter chave ↗' },
+    gemini:      { hint: 'Google AI Studio',        placeholder: 'AIza...',        link: 'https://aistudio.google.com/app/apikey',            linkLabel: 'Obter chave ↗' },
+    openrouter:  { hint: 'Começa com sk-or-v1-  ·  Modelos :free são gratuitos', placeholder: 'sk-or-v1-...', link: 'https://openrouter.ai/settings/keys', linkLabel: 'Criar conta grátis ↗' }
+  };
+
   function refreshKeyHint() {
-    var hints = { anthropic: 'Começa com sk-ant-', openai: 'Começa com sk-', gemini: 'Chave do Google AI Studio', openrouter: 'Começa com sk-or-v1- · Modelos :free não cobram por token' };
-    var el = document.getElementById('key-hint');
-    if (el) { el.textContent = hints[selectedProvider] || ''; }
+    var meta = PROVIDER_META[selectedProvider] || {};
+    var hintEl = document.getElementById('key-hint');
+    var linkEl = document.getElementById('key-link');
+    var keyInput = document.getElementById('setup-key');
+    if (hintEl) { hintEl.textContent = meta.hint || ''; }
+    if (linkEl) { linkEl.href = meta.link || '#'; linkEl.textContent = meta.linkLabel || 'Obter chave ↗'; }
+    if (keyInput) { keyInput.placeholder = meta.placeholder || 'Cole a chave aqui'; }
   }
 
   // Register
@@ -1089,6 +1144,8 @@
           document.getElementById('test-ok').classList.add('show');
           testPassed = true;
           document.getElementById('btn-next').disabled = false;
+          var helper = document.getElementById('next-helper');
+          if (helper) { helper.classList.remove('show'); }
         } else {
           showErr('test-err', r.data.message || 'Erro na conexão.');
           testPassed = false;
@@ -1097,7 +1154,7 @@
       }).catch(function () {
         btnTestLlm.disabled = false;
         btnTestLlm.textContent = 'Testar conexão';
-        showErr('test-err', 'Erro de conexão.');
+        showErr('test-err', 'Erro de conexão com o servidor.');
       });
     });
   }
@@ -1231,6 +1288,10 @@
     refreshKeyHint();
     testPassed = false;
     document.getElementById('btn-next').disabled = true;
+    var helper = document.getElementById('next-helper');
+    if (helper) { helper.classList.add('show'); }
+    hideMsg('test-ok');
+    hideMsg('test-err');
   }
 
   // Initial route on page load
