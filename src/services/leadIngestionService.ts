@@ -1,4 +1,4 @@
-import { metaWebhookSchema, type MetaWebhookPayload } from '../schemas/metaWebhook.js';
+import { metaWebhookSchema, type MetaWebhookPayload } from '../integrations/meta/schema.js';
 import { normalizeMetaPayload } from '../integrations/meta/normalizer.js';
 import { webhookEventRepository } from '../repositories/webhookEventRepository.js';
 import { leadRepository } from '../repositories/leadRepository.js';

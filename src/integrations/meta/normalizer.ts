@@ -1,4 +1,4 @@
-import type { MetaWebhookPayload } from '../../schemas/metaWebhook.js';
+import type { MetaWebhookPayload } from './schema.js';
 import { normalizeEmail, normalizeIsoDate, normalizePhone, optionalText } from '../../utils/normalize.js';
 import type { NormalizedLead } from '../../types/domain.js';
 

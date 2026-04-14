@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { metaWebhookSchema } from '../src/schemas/metaWebhook.js';
+import { metaWebhookSchema } from '../src/integrations/meta/schema.js';
 
 describe('metaWebhookSchema', () => {
   it('rejects malformed payload', () => {
