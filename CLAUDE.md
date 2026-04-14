@@ -4,6 +4,67 @@ This file gives Claude Code the context it needs to work effectively in this rep
 
 ---
 
+## Current State — read this first
+
+**Last updated:** 2026-04-14
+
+### What is built and working
+
+| Layer | Status | Notes |
+|---|---|---|
+| Meta webhook ingestion | ✅ Production | HMAC validation, dedup, PostgreSQL, n8n delivery, retries |
+| Multi-tenant routing | ✅ Production | `routing.json` cascade: form → page → default → env |
+| Instagram SDR unified endpoint | ✅ Production | `POST /webhooks/v1/leads`, mapper registry, `lead_sources` table |
+| Dead-letter replay API | ✅ Production | `GET /admin/leads/failed`, `POST /admin/leads/:id/replay`, Bearer auth |
+| OpenAPI docs + Prometheus metrics | ✅ Production | `/docs`, `/metrics` |
+| Auth system | ✅ Production | JWT cookie, register (auto-login), login, logout, `/api/auth/me` |
+| Setup wizard UI (`src/ui.html`) | ✅ Production | Screens: register → setup-1 (LLM) → setup-2 (Meta) → done → app + settings panel |
+| LLM settings service | ✅ Production | Anthropic, OpenAI, Gemini, OpenRouter; `settingsService` with cache; `007_add_settings.sql` |
+| Prompt tester | ✅ Production | Tester tab + demo tab + history tab; reads LLM config from DB |
+
+### Known issues / tech debt
+
+| Issue | Location | Impact |
+|---|---|---|
+| `askAnthropic()` in promptTesterService ignores `apiKey`/`model` params — calls `askLLM()` (DB settings) instead | `src/services/promptTesterService.ts:52` | Tester tab always uses DB key, not the key passed via UI |
+| Settings panel has no "test connection" button | `src/ui.html` panel-settings | User must re-run wizard to validate a changed key |
+| E2E coverage missing for setup-2, done screen, settings panel | `tests/` | Those flows tested manually only |
+
+### What was E2E tested (2026-04-14, Playwright, 41/41 pass)
+
+- Register → auto-login → setup-1 redirect
+- All 4 provider buttons visible; placeholder/hint/link/guide box correct per provider
+- Key field show/hide toggle
+- "Próximo" gated until test passes; helper text shown/hidden correctly
+- Invalid key → error shown, Próximo stays disabled
+- Login with wrong password → error
+- Login with correct credentials → setup-1 (setup incomplete)
+- Register/login screen toggle links
+- Duplicate email → 409 "Este email já está cadastrado."
+- Password < 8 chars → blocked by HTML5 minlength
+- Provider change resets test state (ok-msg hidden, Próximo disabled, helper shown)
+
+### Migrations applied (in order)
+
+```
+001_init.sql          — webhook_events, leads
+002_placeholder.sql   — sequence gap filler
+003_add_n8n_target_url.sql
+004_add_lead_sources.sql
+005_add_source_fields_to_leads.sql
+006_add_users.sql
+007_add_settings.sql
+```
+
+### Deployment
+
+- Platform: **Render** (`render.yaml`)
+- URL: `https://testn8nmetaapi.onrender.com`
+- Server starts with: `node scripts/run-migration.mjs && node dist/server.js`
+- `src/ui.html` must be copied to `dist/ui.html` at build time (TypeScript compiler does not copy HTML)
+
+---
+
 ## Project Overview
 
 A production-grade hybrid ingestion backend for Facebook Lead Ads:
