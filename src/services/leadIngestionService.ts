@@ -17,8 +17,8 @@ export type LeadIngestionResult =
 
 export class LeadIngestionService {
   constructor(
-    private readonly deliveryService = new N8nDeliveryService(),
-    private readonly routingConfig: RoutingConfig | null = null
+    private readonly deliveryService: N8nDeliveryService,
+    private readonly routingConfig: RoutingConfig | null
   ) {}
 
   async ingest(input: {
