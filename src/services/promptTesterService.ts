@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { askLLM } from './llmService.js';
+import { callAnthropic } from '../integrations/llm/anthropic.js';
 
 export interface CaseItem {
   id: string;
@@ -50,13 +51,21 @@ export function buildMockResponse(input: string): string {
 }
 
 export async function askAnthropic(
-  _apiKey: string,
-  _model: string,
+  apiKey: string | undefined,
+  model: string,
   systemPrompt: string,
   userMessage: string,
   maxTokens: number,
   temperature: number,
 ): Promise<string> {
+  if (apiKey) {
+    return callAnthropic(apiKey, model, {
+      system: systemPrompt,
+      user: userMessage,
+      maxTokens,
+      temperature,
+    });
+  }
   return askLLM({ system: systemPrompt, user: userMessage, maxTokens, temperature });
 }
 
