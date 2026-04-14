@@ -16,19 +16,28 @@ const loginSchema = z.object({
 });
 
 export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
-  // Register — only allowed while users table is empty
+  // Register — creates account and auto-logs in so the setup wizard has an auth cookie
   app.post('/api/auth/register', async (req, reply) => {
     const body = registerSchema.safeParse(req.body);
     if (!body.success) return reply.status(400).send({ error: 'Dados inválidos.' });
 
     const { name, email, password } = body.data;
     const password_hash = await hashPassword(password);
-    await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+    const { rows } = await pool.query<{ id: number }>(
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
       [name, email, password_hash]
     );
 
-    return reply.status(201).send({ message: 'Conta criada.' });
+    const token = app.jwt.sign({ id: rows[0].id, email });
+    reply.setCookie('token', token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30
+    });
+
+    return reply.status(201).send({ name, email, setup_complete: false });
   });
 
   // Login
