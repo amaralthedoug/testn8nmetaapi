@@ -1,9 +1,16 @@
 import type { FastifyInstance } from 'fastify';
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env } from '../config/env.js';
-import { loadCases, runTests, buildMockResponse, askAnthropic } from '../services/promptTesterService.js';
+import { runTests, buildMockResponse, askAnthropic } from '../services/promptTesterService.js';
+import {
+  listPrompts,
+  listCases,
+  listResults,
+  readPrompt,
+  readCase,
+} from '../services/testerFileService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,43 +25,15 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
   });
 
   app.get('/api/prompts', async (_request, reply) => {
-    try {
-      const files = await readdir(path.join(process.cwd(), 'prompts'));
-      return reply.send(files.filter((f) => f.endsWith('.md')));
-    } catch {
-      return reply.send([]);
-    }
+    return reply.send(await listPrompts());
   });
 
   app.get('/api/cases', async (_request, reply) => {
-    try {
-      const files = await readdir(path.join(process.cwd(), 'cases'));
-      return reply.send(files.filter((f) => f.endsWith('.json')));
-    } catch {
-      return reply.send([]);
-    }
+    return reply.send(await listCases());
   });
 
   app.get('/api/results', async (_request, reply) => {
-    try {
-      const dir = path.join(process.cwd(), 'results');
-      const files = await readdir(dir).catch(() => []);
-      const items = await Promise.all(
-        files
-          .filter((f) => f.endsWith('.json'))
-          .sort()
-          .reverse()
-          .slice(0, 30)
-          .map(async (f) => {
-            const raw = await readFile(path.join(dir, f), 'utf8');
-            const { metadata } = JSON.parse(raw) as { metadata: Record<string, unknown> };
-            return { file: f, ...metadata };
-          }),
-      );
-      return reply.send(items);
-    } catch {
-      return reply.send([]);
-    }
+    return reply.send(await listResults());
   });
 
   app.post('/api/run', async (request, reply) => {
@@ -74,8 +53,8 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
 
     try {
       const [promptContent, cases] = await Promise.all([
-        readFile(path.join(process.cwd(), 'prompts', promptFile), 'utf8'),
-        loadCases(path.join(process.cwd(), 'cases', casesFile)),
+        readPrompt(promptFile),
+        readCase(casesFile),
       ]);
 
       const results = await runTests({ promptContent, casesFile: cases, mock, apiKey, model });
@@ -116,9 +95,9 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
     }
 
     try {
-      const promptContent = await readFile(path.join(process.cwd(), 'prompts', promptFile), 'utf8');
+      const promptContent = await readPrompt(promptFile);
       const output = await askAnthropic(
-        apiKey as string,
+        apiKey,
         model ?? 'claude-haiku-4-5-20251001',
         promptContent,
         lastMessage,
