@@ -10,7 +10,7 @@ import fastifyCookie from '@fastify/cookie';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { registerAuthRoutes } from '../routes/auth.js';
-import { registerMetaRoutes } from '../routes/meta.js';
+import { registerMetaRoutes } from '../integrations/meta/routes.js';
 import { registerHealthRoutes } from '../routes/health.js';
 import { registerUnifiedWebhookRoutes } from '../routes/webhooks/unified.js';
 import { loadRoutingConfig } from '../routing/config.js';
