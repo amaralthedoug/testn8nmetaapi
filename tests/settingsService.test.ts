@@ -39,6 +39,25 @@ describe('getSetting', () => {
   });
 });
 
+describe('getSetting — TTL expiry', () => {
+  it('re-queries DB after cache entry expires', async () => {
+    vi.useFakeTimers();
+
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ value: 'old' }] } as never)
+      .mockResolvedValueOnce({ rows: [{ value: 'new' }] } as never);
+
+    await getSetting('llm_provider');          // prime cache
+    vi.advanceTimersByTime(61_000);            // advance past 60s TTL
+    const result = await getSetting('llm_provider'); // should re-query
+
+    expect(result).toBe('new');
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+});
+
 describe('setSetting', () => {
   it('upserts value and invalidates cache', async () => {
     mockQuery
