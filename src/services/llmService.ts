@@ -72,6 +72,32 @@ async function callGemini(key: string, model: string, req: LLMRequest): Promise<
   return data.candidates[0].content.parts[0].text;
 }
 
+// BUSINESS RULE: OpenRouter uses an OpenAI-compatible API but requires HTTP-Referer
+// for attribution and routes to 300+ models including free-tier ones (suffix :free).
+async function callOpenRouter(key: string, model: string, req: LLMRequest): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'content-type': 'application/json',
+      'HTTP-Referer': 'https://testn8nmetaapi.onrender.com',
+      'X-Title': 'SDR AI'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: req.maxTokens,
+      temperature: req.temperature,
+      messages: [
+        { role: 'system', content: req.system },
+        { role: 'user', content: req.user }
+      ]
+    })
+  });
+  if (!res.ok) translateHttpError(res.status);
+  const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+  return data.choices[0].message.content;
+}
+
 export async function askLLM(req: LLMRequest): Promise<string> {
   const [provider, key, model] = await Promise.all([
     getSetting('llm_provider'),
@@ -87,6 +113,7 @@ export async function askLLM(req: LLMRequest): Promise<string> {
     if (provider === 'anthropic') return await callAnthropic(key, model, req);
     if (provider === 'openai') return await callOpenAI(key, model, req);
     if (provider === 'gemini') return await callGemini(key, model, req);
+    if (provider === 'openrouter') return await callOpenRouter(key, model, req);
     throw new Error(`Provedor desconhecido: ${provider}`);
   } catch (err) {
     if (err instanceof Error) throw err;

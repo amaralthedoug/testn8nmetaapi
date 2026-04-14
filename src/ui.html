@@ -194,7 +194,7 @@
     .step-indicator { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
 
     /* Provider selector */
-    .provider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
     .provider-btn { padding: 10px 8px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
     .provider-btn.selected { border-color: var(--text); color: var(--text); background: var(--border); }
 
@@ -291,6 +291,7 @@
         <button class="provider-btn selected" data-provider="anthropic">Anthropic</button>
         <button class="provider-btn" data-provider="openai">OpenAI</button>
         <button class="provider-btn" data-provider="gemini">Gemini</button>
+        <button class="provider-btn" data-provider="openrouter">OpenRouter</button>
       </div>
       <label>
         Chave de API
@@ -925,7 +926,16 @@
   var MODELS = {
     anthropic: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'],
     openai: ['gpt-4o-mini', 'gpt-4o'],
-    gemini: ['gemini-2.0-flash', 'gemini-1.5-pro']
+    gemini: ['gemini-2.0-flash', 'gemini-1.5-pro'],
+    openrouter: [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'meta-llama/llama-3.2-3b-instruct:free',
+      'google/gemma-2-9b-it:free',
+      'mistralai/mistral-7b-instruct:free',
+      'qwen/qwen-2.5-7b-instruct:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'deepseek/deepseek-r1:free'
+    ]
   };
 
   var KEY_LABELS = {
@@ -1003,7 +1013,7 @@
   }
 
   function refreshKeyHint() {
-    var hints = { anthropic: 'Começa com sk-ant-', openai: 'Começa com sk-', gemini: 'Chave do Google AI Studio' };
+    var hints = { anthropic: 'Começa com sk-ant-', openai: 'Começa com sk-', gemini: 'Chave do Google AI Studio', openrouter: 'Começa com sk-or-v1- · Modelos :free não cobram por token' };
     var el = document.getElementById('key-hint');
     if (el) { el.textContent = hints[selectedProvider] || ''; }
   }

@@ -54,7 +54,7 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
     if (!(await requireAuth(app, req, reply))) return;
 
     const body = z.object({
-      provider: z.enum(['anthropic', 'openai', 'gemini']),
+      provider: z.enum(['anthropic', 'openai', 'gemini', 'openrouter']),
       api_key: z.string().min(1),
       model: z.string().min(1)
     }).safeParse(req.body);
