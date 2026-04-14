@@ -23,10 +23,18 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
 
     const { name, email, password } = body.data;
     const password_hash = await hashPassword(password);
-    const { rows } = await pool.query<{ id: number }>(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
-      [name, email, password_hash]
-    );
+    let rows: { id: number }[];
+    try {
+      const result = await pool.query<{ id: number }>(
+        'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
+        [name, email, password_hash]
+      );
+      rows = result.rows;
+    } catch (err: unknown) {
+      const pg = err as { code?: string };
+      if (pg.code === '23505') return reply.status(409).send({ error: 'Este email já está cadastrado.' });
+      throw err;
+    }
 
     const token = app.jwt.sign({ id: rows[0].id, email });
     reply.setCookie('token', token, {
