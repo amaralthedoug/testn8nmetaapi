@@ -205,8 +205,13 @@
     /* Key hint with link */
     .key-hint-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
     .key-hint-text { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-2); }
-    .key-hint-link { font-size: 11px; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border-2); transition: color 0.15s; }
-    .key-hint-link:hover { color: var(--text-2); }
+
+    /* Provider guide box */
+    .provider-guide { margin-top: 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .provider-guide-steps { font-size: 12px; color: var(--text-2); line-height: 1.7; }
+    .provider-guide-steps strong { color: var(--text); font-weight: 600; }
+    .provider-guide-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--bg); background: var(--text); padding: 6px 12px; border-radius: 6px; text-decoration: none; transition: opacity 0.15s; align-self: flex-start; }
+    .provider-guide-link:hover { opacity: 0.85; }
 
     /* Next-button helper */
     .next-helper { font-size: 11px; color: var(--muted); text-align: right; margin-top: 6px; display: none; }
@@ -331,11 +336,13 @@
           <input type="password" id="setup-key" placeholder="sk-ant-..." autocomplete="off" />
           <button type="button" class="toggle-btn" data-target="setup-key">Mostrar</button>
         </div>
-        <div class="key-hint-row">
-          <span class="key-hint-text" id="key-hint">Começa com sk-ant-</span>
-          <a class="key-hint-link" id="key-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Obter chave ↗</a>
-        </div>
+        <span class="key-hint-text" id="key-hint" style="display:block;margin-top:6px;">Começa com sk-ant-</span>
       </label>
+
+      <div class="provider-guide" id="provider-guide">
+        <div class="provider-guide-steps" id="provider-guide-steps"></div>
+        <a class="provider-guide-link" id="provider-guide-link" href="#" target="_blank" rel="noopener">Gerar chave de API ↗</a>
+      </div>
 
       <label style="margin-top:16px;">
         Modelo
@@ -1057,19 +1064,48 @@
   }
 
   var PROVIDER_META = {
-    anthropic:   { hint: 'Começa com sk-ant-',     placeholder: 'sk-ant-...',    link: 'https://console.anthropic.com/settings/keys',       linkLabel: 'Obter chave ↗' },
-    openai:      { hint: 'Começa com sk-',          placeholder: 'sk-...',         link: 'https://platform.openai.com/api-keys',              linkLabel: 'Obter chave ↗' },
-    gemini:      { hint: 'Google AI Studio',        placeholder: 'AIza...',        link: 'https://aistudio.google.com/app/apikey',            linkLabel: 'Obter chave ↗' },
-    openrouter:  { hint: 'Começa com sk-or-v1-  ·  Modelos :free são gratuitos', placeholder: 'sk-or-v1-...', link: 'https://openrouter.ai/settings/keys', linkLabel: 'Criar conta grátis ↗' }
+    anthropic: {
+      hint: 'Começa com sk-ant-', placeholder: 'sk-ant-...',
+      link: 'https://console.anthropic.com/settings/keys',
+      linkLabel: 'Gerar chave na Anthropic ↗',
+      steps: ['1. Acesse console.anthropic.com', '2. Crie uma conta ou faça login', '3. Vá em Settings → API Keys → Create Key']
+    },
+    openai: {
+      hint: 'Começa com sk-', placeholder: 'sk-...',
+      link: 'https://platform.openai.com/api-keys',
+      linkLabel: 'Gerar chave na OpenAI ↗',
+      steps: ['1. Acesse platform.openai.com', '2. Crie uma conta ou faça login', '3. Vá em API Keys → Create new secret key']
+    },
+    gemini: {
+      hint: 'Chave do Google AI Studio', placeholder: 'AIza...',
+      link: 'https://aistudio.google.com/app/apikey',
+      linkLabel: 'Gerar chave no Google AI Studio ↗',
+      steps: ['1. Acesse aistudio.google.com', '2. Faça login com sua conta Google', '3. Clique em Get API Key → Create API Key']
+    },
+    openrouter: {
+      hint: 'Começa com sk-or-v1-  ·  Modelos :free são gratuitos', placeholder: 'sk-or-v1-...',
+      link: 'https://openrouter.ai/settings/keys',
+      linkLabel: 'Criar conta grátis no OpenRouter ↗',
+      steps: ['1. Acesse openrouter.ai e clique em Sign In (Google ou GitHub)', '2. Vá em Settings → API Keys → Create Key', '· Modelos com :free no nome não custam nada']
+    }
   };
 
   function refreshKeyHint() {
     var meta = PROVIDER_META[selectedProvider] || {};
     var hintEl = document.getElementById('key-hint');
-    var linkEl = document.getElementById('key-link');
+    var guideSteps = document.getElementById('provider-guide-steps');
+    var guideLink = document.getElementById('provider-guide-link');
     var keyInput = document.getElementById('setup-key');
     if (hintEl) { hintEl.textContent = meta.hint || ''; }
-    if (linkEl) { linkEl.href = meta.link || '#'; linkEl.textContent = meta.linkLabel || 'Obter chave ↗'; }
+    if (guideSteps) {
+      while (guideSteps.firstChild) { guideSteps.removeChild(guideSteps.firstChild); }
+      (meta.steps || []).forEach(function (step) {
+        var line = document.createElement('div');
+        line.textContent = step;
+        guideSteps.appendChild(line);
+      });
+    }
+    if (guideLink) { guideLink.href = meta.link || '#'; guideLink.textContent = meta.linkLabel || 'Gerar chave de API ↗'; }
     if (keyInput) { keyInput.placeholder = meta.placeholder || 'Cole a chave aqui'; }
   }
 
