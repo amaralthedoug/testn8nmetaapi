@@ -1,0 +1,28 @@
+import type { LLMRequest } from './types.js';
+import { translateHttpError } from './utils.js';
+
+// BUSINESS RULE: OpenRouter uses an OpenAI-compatible API but requires HTTP-Referer
+// for attribution and routes to 300+ models including free-tier ones (suffix :free).
+export async function callOpenRouter(key: string, model: string, req: LLMRequest): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'content-type': 'application/json',
+      'HTTP-Referer': 'https://testn8nmetaapi.onrender.com',
+      'X-Title': 'SDR AI'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: req.maxTokens,
+      temperature: req.temperature,
+      messages: [
+        { role: 'system', content: req.system },
+        { role: 'user', content: req.user }
+      ]
+    })
+  });
+  if (!res.ok) translateHttpError(res.status);
+  const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+  return data.choices[0].message.content;
+}

@@ -1,0 +1,18 @@
+import type { LLMRequest } from './types.js';
+import { translateHttpError } from './utils.js';
+
+export async function callGemini(key: string, model: string, req: LLMRequest): Promise<string> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: req.system }] },
+      contents: [{ parts: [{ text: req.user }] }],
+      generationConfig: { maxOutputTokens: req.maxTokens, temperature: req.temperature }
+    })
+  });
+  if (!res.ok) translateHttpError(res.status);
+  const data = await res.json() as { candidates: Array<{ content: { parts: Array<{ text: string }> } }> };
+  return data.candidates[0].content.parts[0].text;
+}
