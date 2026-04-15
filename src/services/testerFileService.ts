@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { CasesFile } from './promptTesterService.js';
 
 const PROMPTS_DIR = join(process.cwd(), 'prompts');
@@ -9,6 +9,18 @@ const RESULTS_DIR = join(process.cwd(), 'results');
 export interface ResultMeta {
   file: string;
   [key: string]: unknown;
+}
+
+/**
+ * SECURITY: Ensures the resolved path stays within the allowed base directory.
+ * Prevents path traversal attacks (e.g. "../../.env").
+ */
+function guardPath(baseDir: string, name: string): string {
+  const resolved = resolve(baseDir, name);
+  if (!resolved.startsWith(baseDir + '/') && resolved !== baseDir) {
+    throw new Error('Nome de arquivo inválido.');
+  }
+  return resolved;
 }
 
 export async function listPrompts(): Promise<string[]> {
@@ -39,7 +51,8 @@ export async function listResults(): Promise<ResultMeta[]> {
 
     return Promise.all(
       files.map(async (f) => {
-        const raw = await readFile(join(RESULTS_DIR, f), 'utf8');
+        const safePath = guardPath(RESULTS_DIR, f);
+        const raw = await readFile(safePath, 'utf8');
         const { metadata } = JSON.parse(raw) as { metadata: Record<string, unknown> };
         return { file: f, ...metadata };
       }),
@@ -50,11 +63,11 @@ export async function listResults(): Promise<ResultMeta[]> {
 }
 
 export async function readPrompt(name: string): Promise<string> {
-  return readFile(join(PROMPTS_DIR, name), 'utf8');
+  return readFile(guardPath(PROMPTS_DIR, name), 'utf8');
 }
 
 export async function readCase(name: string): Promise<CasesFile> {
-  const raw = await readFile(join(CASES_DIR, name), 'utf8');
+  const raw = await readFile(guardPath(CASES_DIR, name), 'utf8');
   const parsed = JSON.parse(raw) as CasesFile;
   if (!parsed.cases || !Array.isArray(parsed.cases) || parsed.cases.length === 0) {
     throw new Error("Arquivo de casos inválido: inclua um array não vazio em 'cases'.");
