@@ -11,7 +11,7 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
       Authorization: `Bearer ${key}`,
       'content-type': 'application/json',
       'HTTP-Referer': 'https://testn8nmetaapi.onrender.com',
-      'X-Title': 'SDR AI'
+      'X-OpenRouter-Title': 'SDR AI'
     },
     body: JSON.stringify({
       model,
