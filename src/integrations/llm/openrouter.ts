@@ -23,7 +23,18 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
       ]
     })
   });
-  if (!res.ok) translateHttpError(res.status);
+  if (!res.ok) {
+    // REASON: OpenRouter returns structured JSON errors with a human-readable message.
+    // Extracting it avoids generic "status 404" errors that give no actionable info.
+    try {
+      const errBody = await res.json() as { error?: { message?: string } };
+      const detail = errBody?.error?.message;
+      if (detail) throw new LLMError(`OpenRouter: ${detail}`);
+    } catch (parseErr) {
+      if (parseErr instanceof LLMError) throw parseErr;
+    }
+    translateHttpError(res.status);
+  }
   const data = await res.json() as { choices: Array<{ message: { content: string } }> };
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new LLMError('Resposta inesperada do OpenRouter.');
