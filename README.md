@@ -68,6 +68,23 @@ Sources
 | `POST` | `/webhooks/meta/lead-ads` | HMAC `X-Hub-Signature-256` | Facebook Lead Ads ingestion |
 | `POST` | `/webhooks/v1/leads` | `X-Api-Key` header | Unified lead ingestion (Instagram, etc.) |
 
+### Auth
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | Create account + auto-login (issues JWT cookie) |
+| `POST` | `/api/auth/login` | Public | Login — returns `setup_complete` flag |
+| `POST` | `/api/auth/logout` | — | Clear JWT cookie |
+| `GET` | `/api/auth/me` | Cookie | Current session info + `setup_complete` |
+
+### Setup & Settings
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/setup/test-llm` | Cookie | Validate LLM provider + key + model, save on success |
+| `GET` | `/api/settings` | Cookie | All settings (sensitive values masked as `***`) |
+| `PUT` | `/api/settings` | Cookie | Upsert one or more settings keys |
+
 ### Admin
 
 | Method | Path | Auth | Description |
@@ -252,9 +269,12 @@ Migrations live in `db/migrations/` and run in filename order:
 | File | Description |
 |---|---|
 | `001_init.sql` | Core tables: `webhook_events`, `leads`, `delivery_attempts` |
+| `002_placeholder.sql` | Sequence gap filler |
 | `003_add_n8n_target_url.sql` | Adds `n8n_target_url` to `leads` for per-form routing |
 | `004_add_lead_sources.sql` | Adds `lead_sources` lookup table |
 | `005_add_source_fields_to_leads.sql` | Adds `source` and `source_id` columns to `leads` |
+| `006_add_users.sql` | Adds `users` table for JWT auth |
+| `007_add_settings.sql` | Adds `settings` table (key/value store for LLM config, Meta tokens, wizard state) |
 
 Run all pending migrations:
 
@@ -268,44 +288,64 @@ npm run db:migrate
 
 ```
 src/
-  app/createApp.ts              # Fastify factory — all plugin registration
+  app/
+    createApp.ts              # Fastify factory (~40 lines) — wires plugins, services, routes
+    plugins.ts                # Plugin registration (helmet, jwt, metrics, rateLimit, swagger…)
   config/
-    env.ts                      # Env vars validated with Zod at startup
-    routingConfig.ts            # routing.json loader and cascade resolver
+    env.ts                    # Env vars validated with Zod at startup
+  routing/
+    config.ts                 # routing.json loader and cascade resolver
+    resolveRoute.ts           # form → page → default cascade
+    applyFieldMap.ts          # promotes raw Meta custom fields to typed fields
   routes/
     health.ts
-    meta.ts                     # GET/POST /webhooks/meta/lead-ads
-    webhooks/unified.ts         # POST /webhooks/v1/leads
-  controllers/
-    metaWebhookController.ts
-    unifiedWebhookController.ts
-  services/
-    leadIngestionService.ts     # Core ingestion + routing + delivery
-    n8nDeliveryService.ts
+    auth.ts                   # Register, login, logout, /api/auth/me
+    settings.ts               # GET/PUT /api/settings, POST /api/setup/test-llm
+    tester.ts                 # Prompt tester API routes
+    manychat.ts
+    webhooks/unified.ts       # POST /webhooks/v1/leads
   integrations/
-    meta/                       # HMAC verification, Meta payload normalizer
+    meta/
+      routes.ts               # GET/POST /webhooks/meta/lead-ads
+      verification.ts         # HMAC and challenge verification
+      normalizer.ts           # Meta payload → NormalizedLead
+      schema.ts               # Zod schema for Meta webhook payload
     instagram/
-      schema.ts                 # Zod schema for Instagram contract v1.0
-      mappers/v1.ts             # Maps Instagram payload → NormalizedLead
-    n8n/client.ts               # HTTP client for n8n
-  db/client.ts                  # PostgreSQL pool (singleton)
+      schema.ts               # Zod schema for Instagram contract v1.0
+      mappers/v1.ts           # Maps Instagram payload → NormalizedLead
+    llm/
+      anthropic.ts            # Anthropic HTTP call
+      openai.ts               # OpenAI HTTP call
+      gemini.ts               # Gemini HTTP call
+      openrouter.ts           # OpenRouter HTTP call
+      registry.ts             # Maps provider name → call function (no if-chain)
+      types.ts                # LLMRequest interface
+      utils.ts                # translateHttpError
+    n8n/client.ts             # HTTP client for n8n
+  services/
+    authService.ts            # bcrypt hash + compare
+    leadIngestionService.ts   # Core ingestion + routing + delivery
+    llmService.ts             # askLLM — reads settings and dispatches to registry
+    n8nDeliveryService.ts
+    promptTesterService.ts
+    settingsService.ts        # DB-backed key/value store with 60s TTL cache
+    testerFileService.ts      # File I/O for prompt/cases/results directories
+  db/client.ts                # PostgreSQL pool (singleton)
   repositories/
     leadRepository.ts
     leadSourcesRepository.ts
     webhookEventRepository.ts
     retryRepository.ts
-  routing/
-    resolveRoute.ts             # form → page → default cascade
-    applyFieldMap.ts            # promotes raw custom fields to typed fields
-  workers/retryWorker.ts        # Polls and replays failed deliveries
-  schemas/                      # Zod schemas for Meta payload
-  utils/                        # logger, hash, correlationId
-  types/domain.ts               # Shared TypeScript types (NormalizedLead, etc.)
-tests/                          # Vitest tests (mirrors src/)
-db/migrations/                  # Plain SQL files
+  workers/retryWorker.ts      # Polls and replays failed deliveries
+  utils/                      # logger, hash, correlationId
+  types/
+    domain.ts                 # Shared TypeScript types (NormalizedLead, etc.)
+    errors.ts                 # AppError hierarchy (LLMError, AuthError, IngestionError, ConfigError)
+tests/                        # Vitest tests (mirrors src/)
+db/migrations/                # Plain SQL files
 config/
-  routing.example.json          # Routing config template
-docs/                           # Specs, plans, n8n workflow guide
+  routing.example.json        # Routing config template
+docs/                         # Specs, plans, n8n workflow guide
 ```
 
 ---
@@ -409,5 +449,8 @@ Integration tests run sequentially (`--no-file-parallelism`) to avoid concurrent
 | ✅ Done | Instagram SDR integration — unified webhook endpoint + contract v1.0 |
 | ✅ Done | Integration test stack — real DB + fake n8n, 7 integration tests, CI Postgres service |
 | ✅ Done | n8n-mcp integration guide + reusable Claude Code skill for automated workflow generation |
+| ✅ Done | Auth system + setup wizard — JWT cookie, register/login/logout, 2-step LLM+Meta config wizard |
+| ✅ Done | LLM provider abstraction — Anthropic, OpenAI, Gemini, OpenRouter with registry pattern |
+| ✅ Done | Engineering cleanup — file structure reorganization, typed errors, TTL cache, explicit DI |
 
 See `docs/ai-agent-roadmap.md` for the full delivery log and backlog.
