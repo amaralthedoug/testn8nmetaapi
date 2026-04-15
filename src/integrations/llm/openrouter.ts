@@ -15,7 +15,7 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
     },
     body: JSON.stringify({
       model,
-      max_tokens: req.maxTokens,
+      ...(req.maxTokens !== undefined && { max_tokens: req.maxTokens }),
       temperature: req.temperature,
       messages: [
         { role: 'system', content: req.system },

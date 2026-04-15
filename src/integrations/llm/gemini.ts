@@ -10,7 +10,7 @@ export async function callGemini(key: string, model: string, req: LLMRequest): P
     body: JSON.stringify({
       system_instruction: { parts: [{ text: req.system }] },
       contents: [{ parts: [{ text: req.user }] }],
-      generationConfig: { maxOutputTokens: req.maxTokens, temperature: req.temperature }
+      generationConfig: { ...(req.maxTokens !== undefined && { maxOutputTokens: req.maxTokens }), temperature: req.temperature }
     })
   });
   if (!res.ok) translateHttpError(res.status);

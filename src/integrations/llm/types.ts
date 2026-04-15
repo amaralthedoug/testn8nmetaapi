@@ -1,6 +1,6 @@
 export interface LLMRequest {
   system: string;
   user: string;
-  maxTokens: number;
+  maxTokens?: number;
   temperature: number;
 }

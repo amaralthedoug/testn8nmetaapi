@@ -12,7 +12,7 @@ export async function callAnthropic(key: string, model: string, req: LLMRequest)
     },
     body: JSON.stringify({
       model,
-      max_tokens: req.maxTokens,
+      max_tokens: req.maxTokens ?? 1024,
       temperature: req.temperature,
       system: req.system,
       messages: [{ role: 'user', content: req.user }]
