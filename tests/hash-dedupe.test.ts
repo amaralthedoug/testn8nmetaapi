@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { buildLeadHash } from '../src/utils/hash.js';
+import type { NormalizedLead } from '../src/types/domain.js';
+
+const baseLead: Partial<NormalizedLead> = {
+  email: 'test@example.com',
+  phone: '11999999999',
+  formId: 'form1',
+  createdTime: '2024-01-01T00:00:00Z',
+  source: 'facebook_lead_ads',
+};
 
 describe('dedupe hash strategy', () => {
   it('uses external id when present', () => {
-    expect(buildLeadHash({ externalLeadId: '123', source: 'facebook_lead_ads' })).toBe('external:123');
+    expect(buildLeadHash({ externalLeadId: '123', source: 'facebook_lead_ads' })).toBe('external:facebook_lead_ads:123');
   });
 
   it('builds deterministic fallback hash', () => {
@@ -14,6 +23,12 @@ describe('dedupe hash strategy', () => {
 
   it('builds hash for instagram lead using handle as external id', () => {
     const hash = buildLeadHash({ externalLeadId: '@joao_silva', source: 'instagram' });
-    expect(hash).toBe('external:@joao_silva');
+    expect(hash).toBe('external:instagram:@joao_silva');
+  });
+
+  it('produces different hash for same externalLeadId from different sources', () => {
+    const leadA = { ...baseLead, externalLeadId: 'handle123', source: 'instagram' } as NormalizedLead;
+    const leadB = { ...baseLead, externalLeadId: 'handle123', source: 'facebook' } as NormalizedLead;
+    expect(buildLeadHash(leadA)).not.toBe(buildLeadHash(leadB));
   });
 });
