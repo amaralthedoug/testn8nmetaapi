@@ -1171,7 +1171,7 @@
         return res.json().then(function (data) { return { ok: res.ok, data: data }; });
       }).then(function (r) {
         if (!r.ok) { showErr('reg-err', r.data.error || 'Erro ao criar conta.'); return; }
-        initSetup1();
+        loadSetup1();
         showScreen('screen-setup-1');
       }).catch(function () { showErr('reg-err', 'Erro de conexão.'); });
     });
@@ -1194,7 +1194,7 @@
         return res.json().then(function (data) { return { ok: res.ok, data: data }; });
       }).then(function (r) {
         if (!r.ok) { showErr('login-err', r.data.error || 'Erro ao entrar.'); return; }
-        if (r.data.setup_complete) { showScreen('screen-app'); } else { initSetup1(); showScreen('screen-setup-1'); }
+        if (r.data.setup_complete) { showScreen('screen-app'); } else { loadSetup1(); showScreen('screen-setup-1'); }
       }).catch(function () { showErr('login-err', 'Erro de conexão.'); });
     });
   }
@@ -1252,13 +1252,13 @@
   var btnNext = document.getElementById('btn-next');
   if (btnNext) {
     btnNext.addEventListener('click', function () {
-      if (testPassed) { showScreen('screen-setup-2'); }
+      if (testPassed) { loadSetup2(); showScreen('screen-setup-2'); }
     });
   }
 
   // Back (setup-2 → setup-1)
   var btnBack = document.getElementById('btn-back');
-  if (btnBack) { btnBack.addEventListener('click', function () { showScreen('screen-setup-1'); }); }
+  if (btnBack) { btnBack.addEventListener('click', function () { loadSetup1(); showScreen('screen-setup-1'); }); }
 
   // Finish setup
   var btnFinish = document.getElementById('btn-finish');
@@ -1268,13 +1268,18 @@
       var verifyToken = document.getElementById('setup-verify').value.trim();
       var appSecret = document.getElementById('setup-secret').value.trim();
       if (verifyToken.length < 8) { showErr('setup2-err', 'Token de verificação deve ter mínimo 8 caracteres.'); return; }
-      if (!appSecret) { showErr('setup2-err', 'App Secret é obrigatório.'); return; }
+      // App Secret: required only if not previously saved (field empty + no saved value)
+      var secretInput = document.getElementById('setup-secret');
+      var secretAlreadySaved = secretInput.placeholder.indexOf('salvo') !== -1;
+      if (!appSecret && !secretAlreadySaved) { showErr('setup2-err', 'App Secret é obrigatório.'); return; }
       btnFinish.disabled = true;
       btnFinish.textContent = 'Salvando...';
+      var payload = { meta_verify_token: verifyToken, setup_complete: 'true' };
+      if (appSecret) { payload.meta_app_secret = appSecret; }
       fetch('/api/settings', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ meta_verify_token: verifyToken, meta_app_secret: appSecret, setup_complete: 'true' })
+        body: JSON.stringify(payload)
       }).then(function (res) {
         btnFinish.disabled = false;
         btnFinish.textContent = 'Salvar e finalizar';
@@ -1392,13 +1397,77 @@
     syncTestButton();
   }
 
+  // Load saved LLM settings into setup-1 form.
+  // If a key is already saved, skip re-test and enable Próximo directly.
+  function loadSetup1() {
+    initSetup1();
+    fetch('/api/settings').then(function (res) { return res.json(); }).then(function (data) {
+      var savedProvider = data['llm_provider'];
+      var savedModel    = data['llm_model'];
+      var savedKey      = data['llm_api_key'];
+
+      if (savedProvider && document.querySelector('.provider-btn[data-provider="' + savedProvider + '"]')) {
+        selectedProvider = savedProvider;
+        document.querySelectorAll('.provider-btn').forEach(function (b) { b.classList.remove('selected'); });
+        document.querySelector('.provider-btn[data-provider="' + savedProvider + '"]').classList.add('selected');
+        refreshModelList();
+        refreshKeyHint();
+      }
+
+      if (savedModel) {
+        var select = document.getElementById('setup-model');
+        for (var i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === savedModel) { select.selectedIndex = i; break; }
+        }
+      }
+
+      // Key is masked as *** by the API — presence means it was saved and tested before.
+      if (savedKey) {
+        testPassed = true;
+        document.getElementById('btn-next').disabled = false;
+        var helper = document.getElementById('next-helper');
+        if (helper) { helper.classList.remove('show'); }
+        document.getElementById('test-ok').classList.add('show');
+        hideMsg('test-err');
+        // Reset testPassed if the user starts typing a new key
+        var keyInput = document.getElementById('setup-key');
+        if (keyInput) {
+          keyInput.placeholder = '(chave salva — deixe em branco para manter)';
+          keyInput.addEventListener('input', function onKeyChange() {
+            if (keyInput.value.trim()) {
+              testPassed = false;
+              document.getElementById('btn-next').disabled = true;
+              document.getElementById('test-ok').classList.remove('show');
+              if (helper) { helper.classList.add('show'); }
+              keyInput.removeEventListener('input', onKeyChange);
+            }
+          }, { once: false });
+        }
+      }
+    }).catch(function () { /* silent — initSetup1 already set safe defaults */ });
+  }
+
+  // Load saved Meta settings into setup-2 form.
+  function loadSetup2() {
+    fetch('/api/settings').then(function (res) { return res.json(); }).then(function (data) {
+      var verifyInput = document.getElementById('setup-verify');
+      var secretInput = document.getElementById('setup-secret');
+      if (data['meta_verify_token'] && verifyInput) {
+        verifyInput.value = data['meta_verify_token'];
+      }
+      if (data['meta_app_secret'] && secretInput) {
+        secretInput.placeholder = '(secret salvo — deixe em branco para manter)';
+      }
+    }).catch(function () {});
+  }
+
   // Initial route on page load
   function route() {
     fetch('/api/auth/me').then(function (res) {
       return res.json().then(function (data) { return { ok: res.ok, data: data }; });
     }).then(function (r) {
       if (r.ok) {
-        if (r.data.setup_complete) { showScreen('screen-app'); } else { initSetup1(); showScreen('screen-setup-1'); }
+        if (r.data.setup_complete) { showScreen('screen-app'); } else { loadSetup1(); showScreen('screen-setup-1'); }
       } else {
         if (r.data.code === 'NO_USER') { showScreen('screen-register'); } else { showScreen('screen-login'); }
       }
