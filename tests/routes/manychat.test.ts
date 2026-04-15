@@ -71,14 +71,14 @@ describe('POST /api/webhook/manychat', () => {
     expect(res.json()).toMatchObject({ error: expect.stringContaining('WEBHOOK_SECRET') });
   });
 
-  it('returns 503 (before field validation) when required fields are missing and WEBHOOK_SECRET is not set', async () => {
+  it('returns 503 before field validation when WEBHOOK_SECRET is not set', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/webhook/manychat',
       headers: { 'content-type': 'application/json' },
-      payload: { handle: '@test' }, // missing required fields
+      payload: { handle: '@test' }, // missing required fields — 400 if auth passed
     });
-    // 503 gate fires before field validation when WEBHOOK_SECRET is unset
-    expect([400, 503]).toContain(res.statusCode);
+    // SECURITY: 503 fires before field validation — WEBHOOK_SECRET gate takes priority
+    expect(res.statusCode).toBe(503);
   });
 });
