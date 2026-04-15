@@ -74,7 +74,7 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
       await askLLM({
         system: 'You are a test assistant.',
         user: 'Reply with exactly: OK',
-        maxTokens: 10,
+        maxTokens: 50,
         temperature: 0
       });
       return reply.send({ ok: true, message: 'Conexão OK' });

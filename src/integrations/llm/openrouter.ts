@@ -24,11 +24,15 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
     })
   });
   if (!res.ok) {
-    // REASON: OpenRouter returns structured JSON errors with a human-readable message.
-    // Extracting it avoids generic "status 404" errors that give no actionable info.
+    // REASON: OpenRouter returns structured JSON errors. The top-level message is often
+    // generic ("Provider returned error"); the real cause is in metadata.raw.
     try {
-      const errBody = await res.json() as { error?: { message?: string } };
-      const detail = errBody?.error?.message;
+      const errBody = await res.json() as {
+        error?: { message?: string; metadata?: { raw?: string } }
+      };
+      const top = errBody?.error?.message;
+      const raw = errBody?.error?.metadata?.raw;
+      const detail = raw ? `${top} — ${raw}` : top;
       if (detail) throw new LLMError(`OpenRouter: ${detail}`);
     } catch (parseErr) {
       if (parseErr instanceof LLMError) throw parseErr;
