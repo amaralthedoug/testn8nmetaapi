@@ -6,7 +6,7 @@
   <title>Prompt Tester — instagram-sdr</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -177,75 +177,99 @@
     .screen { display: none; }
     .screen.visible { display: block; }
 
-    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .auth-card { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; }
-    .auth-card h1, .auth-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .auth-card p { color: var(--text-2); font-size: 13px; margin-bottom: 24px; }
-    .auth-card label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
-    .auth-card label input, .auth-card label select { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; }
-    .auth-card label input:focus, .auth-card label select:focus { border-color: var(--muted); }
-    .auth-btn { width: 100%; padding: 11px; background: var(--text); color: var(--bg); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; }
-    .auth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .auth-help { text-align: center; font-size: 12px; color: var(--text-2); margin-top: 16px; }
-    .err-msg { font-size: 12px; color: var(--fail); margin-top: 6px; display: none; }
+    /* Auth layout */
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; background: var(--bg); }
+    .auth-card { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--border-2); border-radius: 16px; padding: 40px; font-family: 'Inter', sans-serif; }
+
+    /* Typography */
+    .auth-card h1, .auth-card h2 { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: #f4f4f5; letter-spacing: -0.4px; margin-bottom: 8px; }
+    .auth-card p { font-family: 'Inter', sans-serif; color: #a1a1aa; font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+    .auth-card strong { color: #d4d4d8; font-weight: 600; }
+
+    /* Field labels */
+    .auth-card label { display: block; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #d4d4d8; margin-bottom: 18px; }
+    .auth-card label input, .auth-card label select { display: block; width: 100%; margin-top: 7px; padding: 11px 14px; background: #18181b; border: 1px solid #3f3f46; border-radius: 9px; color: #f4f4f5; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; transition: border-color 0.15s; }
+    .auth-card label input:focus, .auth-card label select:focus { border-color: #7c3aed; }
+    .auth-card label input::placeholder { color: #52525b; }
+
+    /* Primary button */
+    .auth-btn { width: 100%; padding: 13px; background: #f4f4f5; color: #09090b; border: none; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: background 0.15s; }
+    .auth-btn:hover:not(:disabled) { background: #e4e4e7; }
+    .auth-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Feedback messages */
+    .auth-help { text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; color: #71717a; margin-top: 18px; }
+    .auth-help a { color: #a1a1aa; text-decoration: underline; text-underline-offset: 3px; }
+    .err-msg { font-family: 'Inter', sans-serif; font-size: 13px; color: #f87171; margin-top: 8px; display: none; line-height: 1.5; }
     .err-msg.show { display: block; }
-    .ok-msg { font-size: 12px; color: var(--pass); margin-top: 6px; display: none; }
+    .ok-msg { font-family: 'Inter', sans-serif; font-size: 13px; color: #4ade80; margin-top: 8px; display: none; }
     .ok-msg.show { display: block; }
-    .step-indicator { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+
+    /* Step indicator */
+    .step-indicator { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #52525b; margin-bottom: 24px; letter-spacing: 0; }
 
     /* Provider selector */
-    .provider-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
-    .provider-btn { position: relative; padding: 12px 10px 10px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 10px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .provider-btn .p-icon { font-size: 18px; line-height: 1; }
-    .provider-btn .p-name { font-size: 11px; }
-    .provider-btn .p-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 3px; margin-top: 2px; }
-    .provider-btn .p-badge.free { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
-    .provider-btn.selected { border-color: var(--text); color: var(--text); background: var(--border); }
+    .provider-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 22px; }
+    .provider-btn { position: relative; padding: 14px 10px 12px; background: #18181b; border: 1px solid #3f3f46; border-radius: 10px; color: #a1a1aa; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .provider-btn .p-icon { font-size: 20px; line-height: 1; }
+    .provider-btn .p-name { font-size: 12px; font-weight: 500; }
+    .provider-btn .p-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; padding: 2px 6px; border-radius: 4px; margin-top: 2px; }
+    .provider-btn .p-badge.free { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); }
+    .provider-btn.selected { border-color: #d4d4d8; color: #f4f4f5; background: #27272a; }
 
-    /* Key hint with link */
-    .key-hint-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
-    .key-hint-text { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-2); }
+    /* Key hint */
+    .key-hint-row { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; }
+    .key-hint-text { font-family: 'DM Mono', monospace; font-size: 12px; color: #71717a; }
 
-    /* Provider guide box */
-    .provider-guide { margin-top: 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-    .provider-guide-steps { font-size: 12px; color: var(--text-2); line-height: 1.7; }
-    .provider-guide-steps strong { color: var(--text); font-weight: 600; }
-    .provider-guide-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--bg); background: var(--text); padding: 6px 12px; border-radius: 6px; text-decoration: none; transition: opacity 0.15s; align-self: flex-start; }
-    .provider-guide-link:hover { opacity: 0.85; }
+    /* Guide box */
+    .provider-guide { margin-top: 12px; background: #18181b; border: 1px solid #3f3f46; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .provider-guide-steps { font-family: 'Inter', sans-serif; font-size: 13px; color: #a1a1aa; line-height: 1.75; }
+    .provider-guide-steps strong { color: #d4d4d8; font-weight: 600; }
+    .provider-guide-steps em { color: #d4d4d8; font-style: normal; }
+    .provider-guide-link { display: inline-flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #09090b; background: #f4f4f5; padding: 7px 14px; border-radius: 7px; text-decoration: none; transition: background 0.15s; align-self: flex-start; }
+    .provider-guide-link:hover { background: #e4e4e7; }
 
     /* Next-button helper */
-    .next-helper { font-size: 11px; color: var(--muted); text-align: right; margin-top: 6px; display: none; }
+    .next-helper { font-family: 'Inter', sans-serif; font-size: 12px; color: #52525b; text-align: right; margin-top: 8px; display: none; }
     .next-helper.show { display: block; }
 
-    /* Input with toggle */
-    .input-row { display: flex; gap: 8px; margin-top: 6px; }
-    .input-row input { flex: 1; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; }
-    .input-row input:focus { border-color: var(--muted); }
-    .toggle-btn { padding: 0 12px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    /* Input with toggle (API keys) */
+    .input-row { display: flex; gap: 8px; margin-top: 7px; }
+    .input-row input { flex: 1; padding: 11px 14px; background: #18181b; border: 1px solid #3f3f46; border-radius: 9px; color: #f4f4f5; font-family: 'DM Mono', monospace; font-size: 14px; outline: none; transition: border-color 0.15s; }
+    .input-row input:focus { border-color: #7c3aed; }
+    .input-row input::placeholder { color: #52525b; }
+    .toggle-btn { padding: 0 14px; background: #18181b; border: 1px solid #3f3f46; border-radius: 9px; color: #a1a1aa; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color 0.15s; }
+    .toggle-btn:hover { color: #f4f4f5; }
 
-    .setup-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 8px; }
+    /* Action row */
+    .setup-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; gap: 10px; }
     .setup-actions .auth-btn { width: auto; flex: 1; margin-top: 0; }
-    .btn-ghost { padding: 11px 16px; background: transparent; border: 1px solid var(--border-2); border-radius: 8px; color: var(--text-2); font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; }
+    .btn-ghost { padding: 13px 18px; background: transparent; border: 1px solid #3f3f46; border-radius: 9px; color: #a1a1aa; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: border-color 0.15s, color 0.15s; white-space: nowrap; }
+    .btn-ghost:hover { border-color: #71717a; color: #d4d4d8; }
 
-    .success-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    /* Done screen */
+    .success-icon { font-size: 44px; text-align: center; margin-bottom: 20px; }
     .auth-card.center { text-align: center; }
 
     /* Settings panel */
-    .panel { position: fixed; top: 0; right: -400px; width: 360px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; transition: right 0.25s ease; z-index: 100; overflow-y: auto; }
+    .panel { position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border-2); padding: 28px; display: flex; flex-direction: column; transition: right 0.25s ease; z-index: 100; overflow-y: auto; font-family: 'Inter', sans-serif; }
     .panel.open { right: 0; }
-    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .panel-header h3 { font-size: 16px; font-weight: 700; }
-    .panel-close { background: none; border: none; color: var(--text-2); font-size: 18px; cursor: pointer; padding: 4px; }
-    .setting-row { padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .panel-header h3 { font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700; color: #f4f4f5; }
+    .panel-close { background: none; border: none; color: #71717a; font-size: 18px; cursor: pointer; padding: 4px; transition: color 0.15s; }
+    .panel-close:hover { color: #f4f4f5; }
+    .setting-row { padding: 16px 0; border-bottom: 1px solid var(--border); }
     .setting-row:last-child { border-bottom: none; }
-    .setting-label { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
-    .setting-value { font-family: 'DM Mono', monospace; font-size: 13px; }
-    .setting-edit { margin-top: 8px; display: flex; gap: 8px; display: none; }
-    .setting-edit input { flex: 1; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; }
-    .setting-edit .save-btn { padding: 8px 12px; background: var(--text); color: var(--bg); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .setting-edit-btn { font-size: 11px; color: var(--text-2); background: none; border: 1px solid var(--border-2); border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-top: 4px; }
+    .setting-label { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #71717a; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .setting-value { font-family: 'DM Mono', monospace; font-size: 14px; color: #d4d4d8; }
+    .setting-edit { margin-top: 10px; display: flex; gap: 8px; display: none; }
+    .setting-edit input { flex: 1; padding: 9px 12px; background: #18181b; border: 1px solid #3f3f46; border-radius: 7px; color: #f4f4f5; font-family: 'DM Mono', monospace; font-size: 13px; outline: none; }
+    .setting-edit .save-btn { padding: 9px 14px; background: #f4f4f5; color: #09090b; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .setting-edit-btn { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #71717a; background: none; border: 1px solid #3f3f46; border-radius: 5px; padding: 3px 10px; cursor: pointer; margin-top: 6px; transition: color 0.15s; }
+    .setting-edit-btn:hover { color: #a1a1aa; }
     .panel-footer { margin-top: auto; padding-top: 20px; }
-    .logout-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border-2); border-radius: 8px; color: var(--fail); font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; }
+    .logout-btn { width: 100%; padding: 11px; background: transparent; border: 1px solid #3f3f46; border-radius: 9px; color: #f87171; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: border-color 0.15s; }
+    .logout-btn:hover { border-color: #f87171; }
 
     /* Print */
     @media print {
@@ -364,49 +388,44 @@
 <!-- SCREEN: setup-2 (Meta tokens) -->
 <div id="screen-setup-2" class="screen">
   <div class="auth-wrap">
-    <div class="auth-card" style="max-width:460px;">
-      <div class="step-indicator">
-        <span style="color:var(--muted);">1/2 · IA &nbsp;✓&nbsp;</span>
-        &nbsp;
-        <span style="color:var(--text);font-weight:700;">2</span><span style="color:var(--border-2);">/2</span>
-        &nbsp;·&nbsp; Instagram / Meta
-      </div>
+    <div class="auth-card">
+      <div class="step-indicator">1/2 · IA &nbsp;·&nbsp; <strong style="color:#d4d4d8;">2/2 · Instagram / Meta</strong></div>
 
-      <h2 style="margin-top:8px;">Conectar ao Instagram</h2>
-      <p>Você vai precisar do painel do <strong style="color:var(--text);">Meta for Developers</strong> aberto em outra aba para completar esta etapa.</p>
+      <h2>Conectar ao Instagram</h2>
+      <p>Tenha o <strong>Meta for Developers</strong> aberto em outra aba — você vai precisar copiar o App Secret de lá.</p>
 
       <!-- Token de Verificação -->
-      <div style="margin-top:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);margin-bottom:6px;">Token de Verificação</div>
-        <input type="text" id="setup-verify" minlength="8" placeholder="Ex: meu-token-secreto-2024" autocomplete="off" style="display:block;width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;" />
-        <div class="provider-guide" style="margin-top:8px;">
-          <div class="provider-guide-steps">
-            <strong>O que é:</strong> uma senha que <em>você mesmo inventa</em>. Pode ser qualquer texto com 8+ caracteres.<br><br>
-            <strong>Onde usar:</strong> ao cadastrar o webhook no Meta, você vai colar este mesmo valor no campo <em>"Token de verificação"</em> — é assim que o Meta confirma que a URL é legítima.
-          </div>
+      <label>
+        Token de Verificação
+        <input type="text" id="setup-verify" minlength="8" placeholder="Ex: meu-token-secreto-2024" autocomplete="off" />
+      </label>
+      <div class="provider-guide" style="margin-top:-10px;margin-bottom:20px;">
+        <div class="provider-guide-steps">
+          <strong>Você mesmo inventa este valor.</strong> Qualquer texto com 8+ caracteres serve.<br>
+          Quando configurar o webhook no Meta, cole este mesmo texto no campo <em>"Token de verificação"</em>.
         </div>
       </div>
 
       <!-- App Secret -->
-      <div style="margin-top:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);margin-bottom:6px;">App Secret</div>
+      <label>
+        App Secret
         <div class="input-row">
           <input type="password" id="setup-secret" placeholder="Cole o App Secret aqui" autocomplete="off" />
           <button type="button" class="toggle-btn" data-target="setup-secret">Mostrar</button>
         </div>
-        <div class="provider-guide" style="margin-top:8px;">
-          <div class="provider-guide-steps">
-            1. Abra seu app no Meta for Developers<br>
-            2. Vá em <strong>Configurações → Básico</strong><br>
-            3. Clique em <strong>"Mostrar"</strong> ao lado de <em>App Secret</em><br>
-            4. Copie e cole o valor acima
-          </div>
-          <a class="provider-guide-link" href="https://developers.facebook.com/apps" target="_blank" rel="noopener">Abrir Meta for Developers ↗</a>
+      </label>
+      <div class="provider-guide" style="margin-top:-10px;margin-bottom:4px;">
+        <div class="provider-guide-steps">
+          1. Abra seu app no Meta for Developers<br>
+          2. Vá em <strong>Configurações → Básico</strong><br>
+          3. Clique em <strong>Mostrar</strong> ao lado de <em>App Secret</em><br>
+          4. Copie e cole o valor acima
         </div>
+        <a class="provider-guide-link" href="https://developers.facebook.com/apps" target="_blank" rel="noopener">Abrir Meta for Developers ↗</a>
       </div>
 
       <div class="err-msg" id="setup2-err"></div>
-      <div class="setup-actions" style="margin-top:24px;">
+      <div class="setup-actions">
         <button type="button" class="btn-ghost" id="btn-back">← Voltar</button>
         <button type="button" class="auth-btn" id="btn-finish">Salvar e finalizar</button>
       </div>
