@@ -1252,23 +1252,29 @@
       if (testPassed) { loadSetup2(); showScreen('screen-setup-2'); return; }
       var keyValue = setupKeyInput ? setupKeyInput.value.trim() : '';
       if (!keyValue) return;
+      // Capture provider and model at click time — user may switch provider while fetch is in flight
+      var providerAtClick = selectedProvider;
+      var modelAtClick = document.getElementById('setup-model').value;
       hideMsg('test-err');
       setActionBtn('testing');
       fetch('/api/setup/test-llm', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ provider: selectedProvider, api_key: keyValue, model: document.getElementById('setup-model').value })
+        body: JSON.stringify({ provider: providerAtClick, api_key: keyValue, model: modelAtClick })
       }).then(function (res) {
         return res.json().then(function (data) { return { ok: res.ok, data: data }; });
       }).then(function (r) {
+        // Discard result if user switched provider while the request was in flight
+        if (selectedProvider !== providerAtClick) return;
         if (r.data.ok) {
-          savedKeysByProvider[selectedProvider] = '***';
+          savedKeysByProvider[providerAtClick] = '***';
           setActionBtn('continue');
         } else {
           setActionBtn(keyValue ? 'ready' : 'empty');
           showErr('test-err', r.data.message || r.data.error || 'Erro na conexão.');
         }
       }).catch(function () {
+        if (selectedProvider !== providerAtClick) return;
         setActionBtn(setupKeyInput && setupKeyInput.value.trim() ? 'ready' : 'empty');
         showErr('test-err', 'Erro de conexão com o servidor.');
       });
@@ -1289,7 +1295,7 @@
       if (verifyToken.length < 8) { showErr('setup2-err', 'Token de verificação deve ter mínimo 8 caracteres.'); return; }
       // App Secret: required only if not previously saved (field empty + no saved value)
       var secretInput = document.getElementById('setup-secret');
-      var secretAlreadySaved = secretInput.placeholder.indexOf('salvo') !== -1;
+      var secretAlreadySaved = secretInput.getAttribute('data-saved') === 'true';
       if (!appSecret && !secretAlreadySaved) { showErr('setup2-err', 'App Secret é obrigatório.'); return; }
       btnFinish.disabled = true;
       btnFinish.textContent = 'Salvando...';
@@ -1450,6 +1456,9 @@
       }
       if (data['meta_app_secret'] && secretInput) {
         secretInput.placeholder = '(secret salvo — deixe em branco para manter)';
+        secretInput.setAttribute('data-saved', 'true');
+      } else if (secretInput) {
+        secretInput.removeAttribute('data-saved');
       }
     }).catch(function () {});
   }
