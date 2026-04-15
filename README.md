@@ -83,7 +83,7 @@ Sources
 |---|---|---|---|
 | `POST` | `/api/setup/test-llm` | Cookie | Validate LLM provider + key + model, save on success |
 | `GET` | `/api/settings` | Cookie | All settings (sensitive values masked as `***`) |
-| `PUT` | `/api/settings` | Cookie | Upsert one or more settings keys |
+| `PUT` | `/api/settings` | Cookie | Upsert settings — only allowlisted keys accepted (see `WRITABLE_SETTINGS` in `settings.ts`) |
 
 ### Admin
 
@@ -380,12 +380,18 @@ See `docs/n8n-workflow.md` for n8n node-by-node setup.
 
 ## Security
 
-- **HMAC validation** — Every `POST /webhooks/meta/lead-ads` is verified against `X-Hub-Signature-256` using the Meta app secret. Invalid or missing signatures are rejected with `401` before any processing.
-- **API key auth** — `POST /webhooks/v1/leads` requires `X-Api-Key` validated with constant-time comparison (`timingSafeEqual`).
+- **HMAC validation** — Every `POST /webhooks/meta/lead-ads` is verified against `X-Hub-Signature-256` using the Meta app secret with `timingSafeEqual`. Invalid or missing signatures are rejected with `401` before any processing.
+- **Meta challenge timing-safe** — `verifyMetaChallenge` uses `timingSafeEqual` — prevents token enumeration via timing side-channel.
+- **API key auth** — `POST /webhooks/v1/leads` requires `X-Api-Key` validated with `timingSafeEqual`.
+- **JWT cookie auth** — All setup, settings, and tester endpoints require a valid JWT via `httpOnly`/`sameSite=strict` cookie (7-day expiry).
+- **Tester endpoints protected** — `/api/config`, `/api/prompts`, `/api/cases`, `/api/results`, `/api/run`, `/api/chat` all require JWT auth. The `/` HTML shell is public.
+- **Path traversal guard** — `readPrompt` and `readCase` resolve and validate file paths against their base directories before any read operation.
+- **Settings allowlist** — `PUT /api/settings` only accepts keys in `WRITABLE_SETTINGS`. Any other key returns `400`. `setup_complete` cannot be written via the API.
+- **Manychat webhook** — `POST /api/webhook/manychat` returns `503` if `WEBHOOK_SECRET` is not configured — never silently open.
+- **Login timing oracle** — `comparePassword` always runs regardless of whether the email exists (uses `DUMMY_HASH` for unknown users) — prevents user enumeration via response timing.
 - **Admin RBAC** — Admin endpoints require `Authorization: Bearer <ADMIN_API_KEY>`.
 - **Schema validation** — All payloads validated with Zod before processing.
 - **Secrets from env only** — No secrets in code or config files.
-- **Structured logging** — JSON logs via pino.
 - **Rate limiting** — Configurable via `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`.
 - **Security headers** — `@fastify/helmet` on all routes.
 

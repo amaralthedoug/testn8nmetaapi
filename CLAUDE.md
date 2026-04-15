@@ -20,7 +20,8 @@ This file gives Claude Code the context it needs to work effectively in this rep
 | Auth system | ✅ Production | JWT cookie, register (auto-login), login, logout, `/api/auth/me` |
 | Setup wizard UI (`src/ui.html`) | ✅ Production | Screens: register → setup-1 (LLM) → setup-2 (Meta) → done → app + settings panel |
 | LLM settings service | ✅ Production | Anthropic, OpenAI, Gemini, OpenRouter; `settingsService` with cache; `007_add_settings.sql` |
-| Prompt tester | ✅ Production | Tester tab + demo tab + history tab; reads LLM config from DB |
+| Prompt tester | ✅ Production | Tester tab + demo tab + history tab; JWT-protected; reads LLM config from DB |
+| Security hardening | ✅ Production | Path traversal guard, tester auth, settings allowlist, timing-safe comparisons |
 
 ### Known issues / tech debt
 
@@ -29,6 +30,7 @@ This file gives Claude Code the context it needs to work effectively in this rep
 | `askAnthropic()` in promptTesterService ignores `apiKey`/`model` params — calls `askLLM()` (DB settings) instead | `src/services/promptTesterService.ts:52` | Tester tab always uses DB key, not the key passed via UI |
 | Settings panel has no "test connection" button | `src/ui.html` panel-settings | User must re-run wizard to validate a changed key |
 | E2E coverage missing for setup-2, done screen, settings panel | `tests/` | Those flows tested manually only |
+| `leadHash` format changed — production leads stored with old `external:<id>` format may dedup incorrectly | `src/utils/hash.ts` | Run `SELECT lead_hash FROM leads WHERE lead_hash LIKE 'external:%' AND lead_hash NOT LIKE 'external:%:%'` before deploying to assess impact. One-off re-hash migration may be needed. |
 
 ### What was E2E tested (2026-04-14, Playwright, 41/41 pass)
 
