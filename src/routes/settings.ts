@@ -5,7 +5,11 @@ import { askLLM } from '../services/llmService.js';
 import { env } from '../config/env.js';
 import { pool } from '../db/client.js';
 
-const SENSITIVE_KEYS = new Set(['llm_api_key', 'meta_app_secret']);
+const SENSITIVE_KEYS = new Set([
+  'llm_api_key', 'meta_app_secret',
+  'llm_api_key_anthropic', 'llm_api_key_openai',
+  'llm_api_key_gemini', 'llm_api_key_openrouter'
+]);
 const MASKED = '***';
 
 async function requireAuth(app: FastifyInstance, req: FastifyRequest, reply: FastifyReply): Promise<boolean> {
@@ -76,6 +80,8 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
         user: 'Reply with exactly: OK',
         temperature: 0
       });
+      // BUSINESS RULE: also persist per-provider key so the wizard can skip re-test on return
+      await setSetting(`llm_api_key_${body.data.provider}`, body.data.api_key);
       return reply.send({ ok: true, message: 'Conexão OK' });
     } catch (err) {
       // Restore previous values (or delete if there were none)

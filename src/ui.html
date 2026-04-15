@@ -373,14 +373,13 @@
         <select id="setup-model"></select>
       </label>
 
-      <div class="ok-msg" id="test-ok" style="margin-top:16px;">✓ Conexão testada com sucesso</div>
+      <div class="ok-msg" id="test-ok" style="margin-top:16px;">✓ Conexão OK — chave salva</div>
       <div class="err-msg" id="test-err"></div>
 
-      <div class="setup-actions" style="margin-top:20px;">
-        <button type="button" class="btn-ghost" id="btn-test-llm">Testar conexão</button>
-        <button type="button" class="auth-btn" id="btn-next" disabled>Próximo →</button>
+      <div style="margin-top:20px;">
+        <button type="button" class="auth-btn" id="btn-action" disabled>Testar conexão</button>
       </div>
-      <div class="next-helper show" id="next-helper">↑ Teste a conexão antes de continuar</div>
+      <div class="next-helper show" id="next-helper">Insira a chave de API para continuar</div>
     </div>
   </div>
 </div>
@@ -1023,11 +1022,11 @@
     openrouter: [
       'google/gemma-4-31b-it:free',
       'google/gemma-4-26b-a4b-it:free',
-      'meta-llama/llama-3.2-3b-instruct:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
       'nvidia/nemotron-3-nano-30b-a3b:free',
-      'google/gemma-2-9b-it:free'
+      'arcee-ai/trinity-large-preview:free',
+      'liquid/lfm-2.5-1.2b-instruct:free',
+      'minimax/minimax-m2.5:free'
     ]
   };
 
@@ -1038,6 +1037,7 @@
 
   var selectedProvider = 'anthropic';
   var testPassed = false;
+  var savedKeysByProvider = { anthropic: null, openai: null, gemini: null, openrouter: null };
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(function (el) { el.classList.remove('visible'); });
@@ -1079,6 +1079,43 @@
     });
   });
 
+  // Single-button state machine for setup-1
+  function setActionBtn(state) {
+    var btn = document.getElementById('btn-action');
+    var helper = document.getElementById('next-helper');
+    if (!btn) return;
+    if (state === 'empty') {
+      btn.disabled = true; btn.textContent = 'Testar conexão'; testPassed = false;
+      if (helper) helper.classList.add('show'); hideMsg('test-ok');
+    } else if (state === 'ready') {
+      btn.disabled = false; btn.textContent = 'Testar conexão'; testPassed = false;
+      if (helper) helper.classList.add('show');
+    } else if (state === 'testing') {
+      btn.disabled = true; btn.textContent = 'Testando...';
+    } else if (state === 'continue') {
+      btn.disabled = false; btn.textContent = 'Continuar →'; testPassed = true;
+      if (helper) helper.classList.remove('show');
+      document.getElementById('test-ok').classList.add('show');
+    }
+  }
+
+  // Apply saved key state for a given provider
+  function applyProviderKey(provider) {
+    var keyInput = document.getElementById('setup-key');
+    var meta = PROVIDER_META[provider] || {};
+    if (savedKeysByProvider[provider]) {
+      keyInput.value = '';
+      keyInput.placeholder = '(chave salva — deixe em branco para manter)';
+      setActionBtn('continue');
+    } else {
+      keyInput.value = '';
+      keyInput.placeholder = meta.placeholder || 'Cole a chave aqui';
+      setActionBtn('empty');
+    }
+    hideMsg('test-err');
+    if (!savedKeysByProvider[provider]) hideMsg('test-ok');
+  }
+
   // Provider selection
   document.querySelectorAll('.provider-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -1087,12 +1124,7 @@
       btn.classList.add('selected');
       refreshModelList();
       refreshKeyHint();
-      testPassed = false;
-      document.getElementById('btn-next').disabled = true;
-      var helper = document.getElementById('next-helper');
-      if (helper) { helper.classList.add('show'); }
-      hideMsg('test-ok');
-      hideMsg('test-err');
+      applyProviderKey(selectedProvider);
     });
   });
 
@@ -1199,60 +1231,47 @@
     });
   }
 
-  // Test LLM connection
-  var btnTestLlm = document.getElementById('btn-test-llm');
+  // Setup-1 key input
   var setupKeyInput = document.getElementById('setup-key');
-
-  function syncTestButton() {
-    if (btnTestLlm) { btnTestLlm.disabled = !setupKeyInput || !setupKeyInput.value.trim(); }
-  }
-
-  if (setupKeyInput) { setupKeyInput.addEventListener('input', syncTestButton); }
-  syncTestButton();
-
-  if (btnTestLlm) {
-    btnTestLlm.addEventListener('click', function () {
-      hideMsg('test-ok');
-      hideMsg('test-err');
-      btnTestLlm.disabled = true;
-      btnTestLlm.textContent = 'Testando...';
-      fetch('/api/setup/test-llm', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          provider: selectedProvider,
-          api_key: setupKeyInput ? setupKeyInput.value : '',
-          model: document.getElementById('setup-model').value
-        })
-      }).then(function (res) {
-        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
-      }).then(function (r) {
-        syncTestButton();
-        btnTestLlm.textContent = 'Testar conexão';
-        if (r.data.ok) {
-          document.getElementById('test-ok').classList.add('show');
-          testPassed = true;
-          document.getElementById('btn-next').disabled = false;
-          var helper = document.getElementById('next-helper');
-          if (helper) { helper.classList.remove('show'); }
-        } else {
-          showErr('test-err', r.data.message || r.data.error || 'Erro na conexão.');
-          testPassed = false;
-          document.getElementById('btn-next').disabled = true;
-        }
-      }).catch(function () {
-        syncTestButton();
-        btnTestLlm.textContent = 'Testar conexão';
-        showErr('test-err', 'Erro de conexão com o servidor.');
-      });
+  if (setupKeyInput) {
+    setupKeyInput.addEventListener('input', function () {
+      var hasTyped = setupKeyInput.value.trim().length > 0;
+      if (hasTyped) {
+        testPassed = false; hideMsg('test-ok');
+        setActionBtn('ready');
+      } else {
+        setActionBtn(savedKeysByProvider[selectedProvider] ? 'continue' : 'empty');
+      }
     });
   }
 
-  // Next (setup-1 → setup-2)
-  var btnNext = document.getElementById('btn-next');
-  if (btnNext) {
-    btnNext.addEventListener('click', function () {
-      if (testPassed) { loadSetup2(); showScreen('screen-setup-2'); }
+  // Single action button: test → on success becomes "Continuar →"
+  var btnAction = document.getElementById('btn-action');
+  if (btnAction) {
+    btnAction.addEventListener('click', function () {
+      if (testPassed) { loadSetup2(); showScreen('screen-setup-2'); return; }
+      var keyValue = setupKeyInput ? setupKeyInput.value.trim() : '';
+      if (!keyValue) return;
+      hideMsg('test-err');
+      setActionBtn('testing');
+      fetch('/api/setup/test-llm', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ provider: selectedProvider, api_key: keyValue, model: document.getElementById('setup-model').value })
+      }).then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      }).then(function (r) {
+        if (r.data.ok) {
+          savedKeysByProvider[selectedProvider] = '***';
+          setActionBtn('continue');
+        } else {
+          setActionBtn(keyValue ? 'ready' : 'empty');
+          showErr('test-err', r.data.message || r.data.error || 'Erro na conexão.');
+        }
+      }).catch(function () {
+        setActionBtn(setupKeyInput && setupKeyInput.value.trim() ? 'ready' : 'empty');
+        showErr('test-err', 'Erro de conexão com o servidor.');
+      });
     });
   }
 
@@ -1388,24 +1407,22 @@
     if (first) { first.classList.add('selected'); }
     refreshModelList();
     refreshKeyHint();
-    testPassed = false;
-    document.getElementById('btn-next').disabled = true;
-    var helper = document.getElementById('next-helper');
-    if (helper) { helper.classList.add('show'); }
     hideMsg('test-ok');
     hideMsg('test-err');
-    syncTestButton();
+    setActionBtn('empty');
   }
 
-  // Load saved LLM settings into setup-1 form.
-  // If a key is already saved, skip re-test and enable Próximo directly.
   function loadSetup1() {
     initSetup1();
     fetch('/api/settings').then(function (res) { return res.json(); }).then(function (data) {
+      savedKeysByProvider = {
+        anthropic:   data['llm_api_key_anthropic']   || null,
+        openai:      data['llm_api_key_openai']      || null,
+        gemini:      data['llm_api_key_gemini']      || null,
+        openrouter:  data['llm_api_key_openrouter']  || null
+      };
       var savedProvider = data['llm_provider'];
       var savedModel    = data['llm_model'];
-      var savedKey      = data['llm_api_key'];
-
       if (savedProvider && document.querySelector('.provider-btn[data-provider="' + savedProvider + '"]')) {
         selectedProvider = savedProvider;
         document.querySelectorAll('.provider-btn').forEach(function (b) { b.classList.remove('selected'); });
@@ -1413,38 +1430,14 @@
         refreshModelList();
         refreshKeyHint();
       }
-
       if (savedModel) {
         var select = document.getElementById('setup-model');
         for (var i = 0; i < select.options.length; i++) {
           if (select.options[i].value === savedModel) { select.selectedIndex = i; break; }
         }
       }
-
-      // Key is masked as *** by the API — presence means it was saved and tested before.
-      if (savedKey) {
-        testPassed = true;
-        document.getElementById('btn-next').disabled = false;
-        var helper = document.getElementById('next-helper');
-        if (helper) { helper.classList.remove('show'); }
-        document.getElementById('test-ok').classList.add('show');
-        hideMsg('test-err');
-        // Reset testPassed if the user starts typing a new key
-        var keyInput = document.getElementById('setup-key');
-        if (keyInput) {
-          keyInput.placeholder = '(chave salva — deixe em branco para manter)';
-          keyInput.addEventListener('input', function onKeyChange() {
-            if (keyInput.value.trim()) {
-              testPassed = false;
-              document.getElementById('btn-next').disabled = true;
-              document.getElementById('test-ok').classList.remove('show');
-              if (helper) { helper.classList.add('show'); }
-              keyInput.removeEventListener('input', onKeyChange);
-            }
-          }, { once: false });
-        }
-      }
-    }).catch(function () { /* silent — initSetup1 already set safe defaults */ });
+      applyProviderKey(selectedProvider);
+    }).catch(function () {});
   }
 
   // Load saved Meta settings into setup-2 form.
