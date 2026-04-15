@@ -5,20 +5,27 @@ import { askAnthropic } from '../services/promptTesterService.js';
 
 export const registerManychatRoutes = async (app: FastifyInstance) => {
   app.post('/api/webhook/manychat', async (request, reply) => {
+    // SECURITY: WEBHOOK_SECRET must be configured — reject all requests if not set.
+    // This prevents the endpoint from being an open relay when misconfigured.
+    if (!env.WEBHOOK_SECRET) {
+      return reply.status(503).send({
+        error: 'Endpoint não disponível. Configure WEBHOOK_SECRET no ambiente.',
+      });
+    }
+
     const secret = request.headers['x-webhook-secret'] as string | undefined;
-    if (env.WEBHOOK_SECRET && secret !== env.WEBHOOK_SECRET) {
+    if (secret !== env.WEBHOOK_SECRET) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
 
-    const { handle, instaId, firstMessage, procedimento, janela, regiao, whatsapp } = request.body as {
-      handle: string;
-      instaId?: string;
-      firstMessage: string;
-      procedimento: string;
-      janela: string;
-      regiao: string;
-      whatsapp?: string;
-    };
+    const body = request.body as Record<string, unknown>;
+    const handle = typeof body['handle'] === 'string' ? body['handle'] : undefined;
+    const instaId = typeof body['instaId'] === 'string' ? body['instaId'] : undefined;
+    const firstMessage = typeof body['firstMessage'] === 'string' ? body['firstMessage'] : undefined;
+    const procedimento = typeof body['procedimento'] === 'string' ? body['procedimento'] : undefined;
+    const janela = typeof body['janela'] === 'string' ? body['janela'] : undefined;
+    const regiao = typeof body['regiao'] === 'string' ? body['regiao'] : undefined;
+    const whatsapp = typeof body['whatsapp'] === 'string' ? body['whatsapp'] : undefined;
 
     if (!handle || !firstMessage || !procedimento || !janela || !regiao) {
       return reply.status(400).send({
