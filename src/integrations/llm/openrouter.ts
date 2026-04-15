@@ -32,8 +32,18 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
       };
       const top = errBody?.error?.message;
       const raw = errBody?.error?.metadata?.raw;
-      const detail = raw ? `${top} — ${raw}` : top;
-      if (detail) throw new LLMError(`OpenRouter: ${detail}`);
+      const combined = raw ? `${top} — ${raw}` : top;
+      if (combined) {
+        // BUSINESS RULE: Free-tier models on OpenRouter share a global rate-limit pool.
+        // When saturated, the message contains "rate-limited" — show a friendly tip instead
+        // of exposing the raw upstream error.
+        if (combined.toLowerCase().includes('rate-limit') || combined.toLowerCase().includes('rate limited')) {
+          throw new LLMError(
+            `Este modelo gratuito está sobrecarregado no momento. Tente outro modelo da lista ou aguarde alguns minutos.`
+          );
+        }
+        throw new LLMError(`OpenRouter: ${combined}`);
+      }
     } catch (parseErr) {
       if (parseErr instanceof LLMError) throw parseErr;
     }
