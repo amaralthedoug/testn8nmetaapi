@@ -1,11 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../db/client.js';
-import { hashPassword, comparePassword } from '../services/authService.js';
+import { hashPassword, comparePassword, DUMMY_HASH } from '../services/authService.js';
 import { env } from '../config/env.js';
 
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
 const registerSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
   email: z.string().email(),
   password: z.string().min(8)
 });
@@ -42,7 +44,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       sameSite: 'strict',
       secure: env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 24 * 30
+      maxAge: COOKIE_MAX_AGE
     });
 
     return reply.status(201).send({ name, email, setup_complete: false });
@@ -59,8 +61,11 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     }>('SELECT id, name, email, password_hash FROM users WHERE email = $1', [email]);
 
     const user = rows[0];
-    const valid = user && (await comparePassword(password, user.password_hash));
-    if (!valid) return reply.status(401).send({ error: 'Email ou senha inválidos.' });
+    // SECURITY: Always run comparePassword even when user not found to prevent
+    // timing-based user enumeration. DUMMY_HASH is a valid bcrypt hash (never matches).
+    const hashToCompare = user ? user.password_hash : DUMMY_HASH;
+    const valid = await comparePassword(password, hashToCompare);
+    if (!user || !valid) return reply.status(401).send({ error: 'Email ou senha inválidos.' });
 
     const { rows: settings } = await pool.query<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'setup_complete'"
@@ -73,7 +78,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       sameSite: 'strict',
       secure: env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 24 * 30
+      maxAge: COOKIE_MAX_AGE
     });
 
     return reply.send({ name: user.name, email: user.email, setup_complete });
@@ -87,7 +92,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
 
   // Me — used by frontend on load to determine which screen to show
   app.get('/api/auth/me', async (req, reply) => {
-    const token = (req as unknown as { cookies: Record<string, string> }).cookies['token'];
+    const token = req.cookies?.['token'];
     if (!token) {
       const { rows } = await pool.query('SELECT id FROM users LIMIT 1');
       const code = rows.length === 0 ? 'NO_USER' : 'NO_SESSION';
