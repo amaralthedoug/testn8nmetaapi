@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env } from '../config/env.js';
+import { requireAuth } from '../utils/requireAuth.js';
 import { runTests, buildMockResponse, askAnthropic } from '../services/promptTesterService.js';
 import {
   listPrompts,
@@ -15,28 +16,35 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const registerTesterRoutes = async (app: FastifyInstance) => {
+  // Public — serves the HTML shell; auth is enforced per-API-call
   app.get('/', async (_request, reply) => {
     const html = await readFile(path.join(__dirname, '..', 'ui.html'), 'utf8');
     return reply.type('text/html').send(html);
   });
 
-  app.get('/api/config', async (_request, reply) => {
+  app.get('/api/config', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
     return reply.send({ hasApiKey: !!env.ANTHROPIC_API_KEY });
   });
 
-  app.get('/api/prompts', async (_request, reply) => {
+  app.get('/api/prompts', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
     return reply.send(await listPrompts());
   });
 
-  app.get('/api/cases', async (_request, reply) => {
+  app.get('/api/cases', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
     return reply.send(await listCases());
   });
 
-  app.get('/api/results', async (_request, reply) => {
+  app.get('/api/results', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
     return reply.send(await listResults());
   });
 
   app.post('/api/run', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
+
     const { prompt: promptFile, cases: casesFile, mock, apiKey: bodyApiKey, model } = request.body as {
       prompt: string;
       cases: string;
@@ -69,11 +77,17 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
         niche: cases.niche,
       });
     } catch (err) {
-      return reply.status(500).send({ error: (err as Error).message });
+      // SECURITY: Do not expose internal paths or provider details in production
+      const message = env.NODE_ENV === 'production'
+        ? 'Erro ao executar testes.'
+        : (err as Error).message;
+      return reply.status(500).send({ error: message });
     }
   });
 
   app.post('/api/chat', async (request, reply) => {
+    if (!(await requireAuth(app, request, reply))) return;
+
     const { prompt: promptFile, messages, mock, apiKey: bodyApiKey, model } = request.body as {
       prompt: string;
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -86,6 +100,10 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
 
     if (!mock && !apiKey) {
       return reply.status(400).send({ error: 'API Key obrigatória no modo real.' });
+    }
+
+    if (!messages || messages.length === 0) {
+      return reply.status(400).send({ error: 'messages não pode ser vazio.' });
     }
 
     const lastMessage = messages[messages.length - 1].content;
@@ -106,7 +124,11 @@ export const registerTesterRoutes = async (app: FastifyInstance) => {
       );
       return reply.send({ output });
     } catch (err) {
-      return reply.status(500).send({ error: (err as Error).message });
+      // SECURITY: Do not expose internal paths or provider details in production
+      const message = env.NODE_ENV === 'production'
+        ? 'Erro ao processar chat.'
+        : (err as Error).message;
+      return reply.status(500).send({ error: message });
     }
   });
 };
