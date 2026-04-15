@@ -1157,6 +1157,15 @@
 
   // Test LLM connection
   var btnTestLlm = document.getElementById('btn-test-llm');
+  var setupKeyInput = document.getElementById('setup-key');
+
+  function syncTestButton() {
+    if (btnTestLlm) { btnTestLlm.disabled = !setupKeyInput || !setupKeyInput.value.trim(); }
+  }
+
+  if (setupKeyInput) { setupKeyInput.addEventListener('input', syncTestButton); }
+  syncTestButton();
+
   if (btnTestLlm) {
     btnTestLlm.addEventListener('click', function () {
       hideMsg('test-ok');
@@ -1168,13 +1177,13 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           provider: selectedProvider,
-          api_key: document.getElementById('setup-key').value,
+          api_key: setupKeyInput ? setupKeyInput.value : '',
           model: document.getElementById('setup-model').value
         })
       }).then(function (res) {
         return res.json().then(function (data) { return { ok: res.ok, data: data }; });
       }).then(function (r) {
-        btnTestLlm.disabled = false;
+        syncTestButton();
         btnTestLlm.textContent = 'Testar conexão';
         if (r.data.ok) {
           document.getElementById('test-ok').classList.add('show');
@@ -1183,12 +1192,12 @@
           var helper = document.getElementById('next-helper');
           if (helper) { helper.classList.remove('show'); }
         } else {
-          showErr('test-err', r.data.message || 'Erro na conexão.');
+          showErr('test-err', r.data.message || r.data.error || 'Erro na conexão.');
           testPassed = false;
           document.getElementById('btn-next').disabled = true;
         }
       }).catch(function () {
-        btnTestLlm.disabled = false;
+        syncTestButton();
         btnTestLlm.textContent = 'Testar conexão';
         showErr('test-err', 'Erro de conexão com o servidor.');
       });
@@ -1328,6 +1337,7 @@
     if (helper) { helper.classList.add('show'); }
     hideMsg('test-ok');
     hideMsg('test-err');
+    syncTestButton();
   }
 
   // Initial route on page load
