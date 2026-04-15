@@ -1,5 +1,6 @@
 import type { LLMRequest } from './types.js';
 import { translateHttpError } from './utils.js';
+import { LLMError } from '../../types/errors.js';
 
 // BUSINESS RULE: OpenRouter uses an OpenAI-compatible API but requires HTTP-Referer
 // for attribution and routes to 300+ models including free-tier ones (suffix :free).
@@ -24,5 +25,7 @@ export async function callOpenRouter(key: string, model: string, req: LLMRequest
   });
   if (!res.ok) translateHttpError(res.status);
   const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-  return data.choices[0].message.content;
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new LLMError('Resposta inesperada do OpenRouter.');
+  return content;
 }

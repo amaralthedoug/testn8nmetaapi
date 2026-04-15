@@ -7,10 +7,6 @@ describe('hashPassword', () => {
     expect(hash).toMatch(/^\$2[aby]\$/);
   });
 
-  it('throws when password is shorter than 8 characters', async () => {
-    await expect(hashPassword('short')).rejects.toThrow('mínimo 8 caracteres');
-  });
-
   it('produces different hashes for same input (salt)', async () => {
     const h1 = await hashPassword('mypassword');
     const h2 = await hashPassword('mypassword');

@@ -1,5 +1,6 @@
 import type { LLMRequest } from './types.js';
 import { translateHttpError } from './utils.js';
+import { LLMError } from '../../types/errors.js';
 
 export async function callAnthropic(key: string, model: string, req: LLMRequest): Promise<string> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -19,5 +20,7 @@ export async function callAnthropic(key: string, model: string, req: LLMRequest)
   });
   if (!res.ok) translateHttpError(res.status);
   const data = await res.json() as { content: Array<{ text: string }> };
-  return data.content[0].text;
+  const text = data.content?.[0]?.text;
+  if (!text) throw new LLMError('Resposta inesperada da Anthropic.');
+  return text;
 }

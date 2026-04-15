@@ -1221,17 +1221,25 @@
   if (btnFinish) {
     btnFinish.addEventListener('click', function () {
       hideMsg('setup2-err');
-      var verifyToken = document.getElementById('setup-verify').value;
-      var appSecret = document.getElementById('setup-secret').value;
+      var verifyToken = document.getElementById('setup-verify').value.trim();
+      var appSecret = document.getElementById('setup-secret').value.trim();
       if (verifyToken.length < 8) { showErr('setup2-err', 'Token de verificação deve ter mínimo 8 caracteres.'); return; }
       if (!appSecret) { showErr('setup2-err', 'App Secret é obrigatório.'); return; }
+      btnFinish.disabled = true;
+      btnFinish.textContent = 'Salvando...';
       fetch('/api/settings', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ meta_verify_token: verifyToken, meta_app_secret: appSecret, setup_complete: 'true' })
       }).then(function (res) {
+        btnFinish.disabled = false;
+        btnFinish.textContent = 'Salvar e finalizar';
         if (res.ok) { showScreen('screen-setup-done'); } else { showErr('setup2-err', 'Erro ao salvar. Tente novamente.'); }
-      }).catch(function () { showErr('setup2-err', 'Erro de conexão.'); });
+      }).catch(function () {
+        btnFinish.disabled = false;
+        btnFinish.textContent = 'Salvar e finalizar';
+        showErr('setup2-err', 'Erro de conexão.');
+      });
     });
   }
 

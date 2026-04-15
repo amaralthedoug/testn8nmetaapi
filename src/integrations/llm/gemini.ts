@@ -1,5 +1,6 @@
 import type { LLMRequest } from './types.js';
 import { translateHttpError } from './utils.js';
+import { LLMError } from '../../types/errors.js';
 
 export async function callGemini(key: string, model: string, req: LLMRequest): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
@@ -14,5 +15,8 @@ export async function callGemini(key: string, model: string, req: LLMRequest): P
   });
   if (!res.ok) translateHttpError(res.status);
   const data = await res.json() as { candidates: Array<{ content: { parts: Array<{ text: string }> } }> };
-  return data.candidates[0].content.parts[0].text;
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  // BUSINESS RULE: Gemini returns empty candidates when content is blocked by safety filters.
+  if (!text) throw new LLMError('Resposta bloqueada ou inesperada do Gemini. Tente outro modelo.');
+  return text;
 }

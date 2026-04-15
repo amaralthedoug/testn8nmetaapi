@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { askLLM } from './llmService.js';
 import { callAnthropic } from '../integrations/llm/anthropic.js';
 
@@ -95,15 +94,6 @@ function evaluateCase(item: CaseItem, output: string): { pass: boolean; notes: s
     pass: false,
     notes: `Baixa cobertura (${(ratio * 100).toFixed(0)}%). Esperado: ${expectedTokens.join(', ')}`,
   };
-}
-
-export async function loadCases(filePath: string): Promise<CasesFile> {
-  const raw = await readFile(filePath, 'utf8');
-  const parsed = JSON.parse(raw) as CasesFile;
-  if (!parsed.cases || !Array.isArray(parsed.cases) || parsed.cases.length === 0) {
-    throw new Error("Arquivo de casos inválido: inclua um array não vazio em 'cases'.");
-  }
-  return parsed;
 }
 
 export async function runTests(options: {
