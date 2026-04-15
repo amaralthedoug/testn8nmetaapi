@@ -364,24 +364,49 @@
 <!-- SCREEN: setup-2 (Meta tokens) -->
 <div id="screen-setup-2" class="screen">
   <div class="auth-wrap">
-    <div class="auth-card">
-      <div class="step-indicator">PASSO 2 DE 2 — INSTAGRAM / META</div>
-      <h2>Configurar Meta</h2>
-      <p>Esses dados conectam o sistema ao seu app do Instagram.</p>
-      <label>
-        Token de Verificação
-        <input type="text" id="setup-verify" minlength="8" placeholder="Escolha qualquer valor com 8+ caracteres" />
-        <small style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">Você mesmo escolhe. Use o mesmo valor quando configurar o webhook no Meta.</small>
-      </label>
-      <label style="margin-top:16px;">
-        App Secret
+    <div class="auth-card" style="max-width:460px;">
+      <div class="step-indicator">
+        <span style="color:var(--muted);">1/2 · IA &nbsp;✓&nbsp;</span>
+        &nbsp;
+        <span style="color:var(--text);font-weight:700;">2</span><span style="color:var(--border-2);">/2</span>
+        &nbsp;·&nbsp; Instagram / Meta
+      </div>
+
+      <h2 style="margin-top:8px;">Conectar ao Instagram</h2>
+      <p>Você vai precisar do painel do <strong style="color:var(--text);">Meta for Developers</strong> aberto em outra aba para completar esta etapa.</p>
+
+      <!-- Token de Verificação -->
+      <div style="margin-top:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);margin-bottom:6px;">Token de Verificação</div>
+        <input type="text" id="setup-verify" minlength="8" placeholder="Ex: meu-token-secreto-2024" autocomplete="off" style="display:block;width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;" />
+        <div class="provider-guide" style="margin-top:8px;">
+          <div class="provider-guide-steps">
+            <strong>O que é:</strong> uma senha que <em>você mesmo inventa</em>. Pode ser qualquer texto com 8+ caracteres.<br><br>
+            <strong>Onde usar:</strong> ao cadastrar o webhook no Meta, você vai colar este mesmo valor no campo <em>"Token de verificação"</em> — é assim que o Meta confirma que a URL é legítima.
+          </div>
+        </div>
+      </div>
+
+      <!-- App Secret -->
+      <div style="margin-top:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);margin-bottom:6px;">App Secret</div>
         <div class="input-row">
-          <input type="password" id="setup-secret" placeholder="Meta for Developers → Configurações básicas" />
+          <input type="password" id="setup-secret" placeholder="Cole o App Secret aqui" autocomplete="off" />
           <button type="button" class="toggle-btn" data-target="setup-secret">Mostrar</button>
         </div>
-      </label>
+        <div class="provider-guide" style="margin-top:8px;">
+          <div class="provider-guide-steps">
+            1. Abra seu app no Meta for Developers<br>
+            2. Vá em <strong>Configurações → Básico</strong><br>
+            3. Clique em <strong>"Mostrar"</strong> ao lado de <em>App Secret</em><br>
+            4. Copie e cole o valor acima
+          </div>
+          <a class="provider-guide-link" href="https://developers.facebook.com/apps" target="_blank" rel="noopener">Abrir Meta for Developers ↗</a>
+        </div>
+      </div>
+
       <div class="err-msg" id="setup2-err"></div>
-      <div class="setup-actions">
+      <div class="setup-actions" style="margin-top:24px;">
         <button type="button" class="btn-ghost" id="btn-back">← Voltar</button>
         <button type="button" class="auth-btn" id="btn-finish">Salvar e finalizar</button>
       </div>
